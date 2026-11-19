@@ -2211,6 +2211,7 @@ E) R$ 11.576,25`;
         const nomeDisc = getNomeDisciplina(e.disciplineId);
         const nomeTop = getNomeTopico(e.disciplineId, e.topicId, e.topicName);
         const motivo = getMotivoErro(e.reasonId);
+        const qtdRevisoes = e.revisoes || 0;
 
         return `
           <div class="bg-white rounded-2xl border ${superado ? 'border-emerald-200 bg-emerald-50/20' : semBizu ? 'border-amber-300' : 'border-slate-200'} p-5 shadow-sm space-y-4">
@@ -2241,9 +2242,18 @@ E) R$ 11.576,25`;
                     QConcursos <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   </a>
                 ` : ''}
-                <button onclick="registrarRevisaoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
-                  Revisado (${e.revisoes || 0}x)
-                </button>
+
+                <div class="inline-flex items-center bg-slate-100 rounded-xl overflow-hidden border border-slate-200/80">
+                  <button onclick="registrarRevisaoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 text-slate-700 transition" title="Registrar +1 revisão">
+                    Revisado (${qtdRevisoes}x)
+                  </button>
+                  ${qtdRevisoes > 0 ? `
+                    <button onclick="desfazerRevisaoErro('${e.id}')" class="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-slate-200 border-l border-slate-200 transition" title="Desfazer 1 revisão (-1)">
+                      &minus;1
+                    </button>
+                  ` : ''}
+                </div>
+
                 <button onclick="toggleDominadoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold rounded-xl transition ${superado ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'}">
                   ${superado ? 'Superado ✓' : 'Marcar Superado'}
                 </button>
@@ -2328,6 +2338,15 @@ E) R$ 11.576,25`;
       salvarEstado();
       renderCadernoErros();
       mostrarToast('Revisão contabilizada!');
+    }
+
+    function desfazerRevisaoErro(id) {
+      const erro = estado.errors.find(e => e.id === id);
+      if (!erro || !erro.revisoes || erro.revisoes <= 0) return;
+      erro.revisoes = Math.max(0, erro.revisoes - 1);
+      salvarEstado();
+      renderCadernoErros();
+      mostrarToast('Contagem de revisão reduzida (-1).', 'aviso');
     }
 
     function toggleDominadoErro(id) {
