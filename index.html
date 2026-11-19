@@ -29,7 +29,9 @@
     .enunciado-lg { font-size: 1.125rem; line-height: 1.75; }
     .enunciado-md { font-size: 1rem; line-height: 1.65; }
     .enunciado-sm { font-size: 0.9rem; line-height: 1.55; }
-    /* Scrollbar discreta */
+    .notes-html table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.75rem; }
+    .notes-html th, .notes-html td { border: 1px solid #cbd5e1; padding: 0.35rem 0.5rem; text-align: left; }
+    .notes-html th { background-color: #f1f5f9; font-weight: 600; }
     ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
@@ -105,14 +107,14 @@
       <!-- KPIs -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="painel-kpis"></div>
 
-      <!-- ATALHO RODADAS EM ANDAMENTO + DESEMPENHO POR MATÉRIA -->
+      <!-- DESEMPENHO POR MATÉRIA + PENDÊNCIAS -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-slate-800 flex items-center gap-2">
               <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600"></i> Desempenho por Matéria
             </h3>
-            <span class="text-xs text-slate-400">Baseado nas rodadas finalizadas</span>
+            <span class="text-xs text-slate-400">Consolidado (Sessões + Tópicos)</span>
           </div>
           <div id="painel-materias-lista" class="space-y-3"></div>
         </div>
@@ -134,7 +136,7 @@
     </section>
 
     <!-- =====================================================================
-         ABA 2: NOVO MÓDULO — RODADAS GUIADAS (LOTE + PAPEL & CANETA)
+         ABA 2: MÓDULO RODADAS GUIADAS (LOTE + PAPEL & CANETA)
     ====================================================================== -->
     <section id="view-rodadas-guiadas" class="view-section hidden space-y-6">
 
@@ -146,7 +148,7 @@
               <h2 class="text-xl font-bold text-slate-900">Rodadas Guiadas — Papel & Caneta</h2>
               <span class="px-2 py-0.5 text-[11px] font-semibold bg-indigo-100 text-indigo-700 rounded-full">Importação em Lote</span>
             </div>
-            <p class="text-sm text-slate-500">Cole baterias prontas, anexe prints de tabelas (`Ctrl+V`), resolva no papel e envie os erros automaticamente.</p>
+            <p class="text-sm text-slate-500">Cole baterias prontas, anexe prints de tabelas (<code>Ctrl+V</code>), resolva no papel e envie os erros automaticamente.</p>
           </div>
           <button onclick="abrirImportadorLote()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm flex items-center gap-2 transition">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Rodada em Lote
@@ -197,7 +199,7 @@
               </label>
               <span class="text-[11px] text-slate-400">Suporta alternativas A-E, A-D ou Certo/Errado</span>
             </div>
-            <textarea id="imp-texto-bruto" rows="9" placeholder="Cole aqui todas as questões da rodada de uma só vez...&#10;&#10;Exemplo:&#10;1- (Q1922552) CESGRANRIO - 2023 - Banco do Brasil&#10;Uma taxa nominal de 12% ao ano com capitalização mensal equivale a...&#10;A) 12,00%&#10;B) 12,36%&#10;C) 12,55%&#10;D) 12,68%&#10;E) 13,00%" class="w-full p-3.5 text-sm font-mono bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></textarea>
+            <textarea id="imp-texto-bruto" rows="9" placeholder="Cole aqui todas as questões da rodada de uma só vez...&#10;&#10;Exemplo:&#10;1- (Q1922552) CESGRANRIO - 2023 - Petrobras&#10;Uma taxa nominal de 12% ao ano com capitalização mensal equivale a...&#10;A) 12,00%&#10;B) 12,36%&#10;C) 12,55%&#10;D) 12,68%&#10;E) 13,00%" class="w-full p-3.5 text-sm font-mono bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></textarea>
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
@@ -234,7 +236,6 @@
 
       <!-- SUB-VIEW C: MODO RESOLUÇÃO "PAPEL & CANETA" -->
       <div id="rg-sub-resolver" class="hidden space-y-5">
-        <!-- BARRA SUPERIOR FIXA DA RODADA -->
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm sticky top-[68px] z-20">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
@@ -259,16 +260,14 @@
 
             <!-- CONTROLES DE LEITURA, CRONÔMETRO E FINALIZAÇÃO -->
             <div class="flex flex-wrap items-center gap-2">
-              <!-- Cronômetro discreto -->
               <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 rounded-xl text-xs font-mono text-slate-700">
                 <i data-lucide="timer" class="w-3.5 h-3.5 text-slate-500"></i>
                 <span id="res-cronometro">00:00</span>
-                <button onclick="toggleCronometro()" id="btn-crono-toggle" class="ml-1 text-indigo-600 hover:text-indigo-800 font-sans font-semibold" title="Pausar/Retomar">
+                <button onclick="toggleCronometro()" id="btn-crono-toggle" class="ml-1 text-indigo-600 hover:text-indigo-800 font-sans font-semibold">
                   Pausar
                 </button>
               </div>
 
-              <!-- Tamanho da fonte -->
               <div class="flex items-center bg-slate-100 rounded-xl p-0.5">
                 <button onclick="alterarFonteResolucao('sm')" class="px-2 py-1 text-xs font-semibold rounded-lg hover:bg-white text-slate-600" title="Fonte menor">A-</button>
                 <button onclick="alterarFonteResolucao('md')" class="px-2 py-1 text-xs font-semibold rounded-lg hover:bg-white text-slate-700" title="Fonte padrão">A</button>
@@ -281,7 +280,6 @@
             </div>
           </div>
 
-          <!-- BARRA DE PROGRESSO + FILTROS RÁPIDOS -->
           <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
             <div class="flex-1 min-w-[180px] bg-slate-100 h-2 rounded-full overflow-hidden">
               <div id="res-barra-progresso" class="bg-indigo-600 h-full transition-all duration-300" style="width: 0%"></div>
@@ -296,19 +294,18 @@
           </div>
         </div>
 
-        <!-- LISTA DE QUESTÕES NO MODO PAPEL & CANETA -->
         <div id="res-questoes-lista" class="space-y-5"></div>
       </div>
     </section>
 
     <!-- =====================================================================
-         ABA 3: CADERNO DE ERROS (COM ACTIVE RECALL + ORIGEM + BIZU)
+         ABA 3: CADERNO DE ERROS (COM ACTIVE RECALL + MOTIVOS + BIZU)
     ====================================================================== -->
     <section id="view-erros" class="view-section hidden space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold text-slate-900">Caderno de Erros & Revisão Ativa</h2>
-          <p class="text-sm text-slate-500">Registros enviados das rodadas ou cadastrados manualmente. Preencha seu bizu e pratique Active Recall.</p>
+          <p class="text-sm text-slate-500">Registros enviados das rodadas ou salvos anteriormente. Classifique o motivo do erro, escreva seu bizu e pratique Active Recall.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="toggleActiveRecall()" id="btn-active-recall" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-1.5 transition">
@@ -333,8 +330,8 @@
             <option value="sem-bizu">Pendentes de Bizu / Motivo</option>
             <option value="erro">Apenas Erros</option>
             <option value="duvida">Apenas Dúvida / Chute</option>
-            <option value="ativos">Não dominados (Para revisar)</option>
-            <option value="dominados">Já dominados</option>
+            <option value="ativos">Pendentes (Para revisar)</option>
+            <option value="dominados">Superados / Dominados</option>
           </select>
         </div>
         <div>
@@ -345,7 +342,7 @@
         </div>
         <div class="lg:col-span-2">
           <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Buscar por código, assunto ou texto</label>
-          <input type="text" id="filtro-erro-busca" oninput="renderCadernoErros()" placeholder="Ex: Q1922552, Taxas, Cesgranrio..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-indigo-500" />
+          <input type="text" id="filtro-erro-busca" oninput="renderCadernoErros()" placeholder="Ex: Q1922552, Crase, Time Charter, CIDE..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-indigo-500" />
         </div>
       </div>
 
@@ -353,18 +350,22 @@
     </section>
 
     <!-- =====================================================================
-         ABA 4: MATÉRIAS E TÓPICOS
+         ABA 4: MATÉRIAS E TÓPICOS DO EDITAL
     ====================================================================== -->
     <section id="view-materias" class="view-section hidden space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold text-slate-900">Matérias e Subtópicos do Edital</h2>
-          <p class="text-sm text-slate-500">Organize as disciplinas e os subtópicos usados para classificar suas questões nas rodadas.</p>
+          <p class="text-sm text-slate-500">Suas disciplinas, tópicos, resumos salvos e progresso de estudo.</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
+          <select id="nova-materia-categoria" class="px-3 py-2 text-sm border border-slate-300 rounded-xl bg-white outline-none">
+            <option value="Conhecimentos Básicos">Conhecimentos Básicos</option>
+            <option value="Conhecimentos Específicos" selected>Conhecimentos Específicos</option>
+          </select>
           <input type="text" id="nova-materia-nome" placeholder="Nova matéria..." class="px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white outline-none focus:border-indigo-500" />
           <button onclick="adicionarMateria()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl flex items-center gap-1.5 transition">
-            <i data-lucide="folder-plus" class="w-4 h-4"></i> Adicionar Matéria
+            <i data-lucide="folder-plus" class="w-4 h-4"></i> Adicionar
           </button>
         </div>
       </div>
@@ -383,7 +384,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <h3 class="font-bold text-slate-800 mb-3 text-sm">Evolução da Taxa de Acerto (%) por Rodada</h3>
+          <h3 class="font-bold text-slate-800 mb-3 text-sm">Evolução da Taxa de Acerto (%) por Sessão / Rodada</h3>
           <div class="h-72">
             <canvas id="chart-evolucao-rodadas"></canvas>
           </div>
@@ -403,14 +404,14 @@
     <section id="view-historico" class="view-section hidden space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 class="text-xl font-bold text-slate-900">Histórico de Rodadas & Backup</h2>
-          <p class="text-sm text-slate-500">Exporte seus dados em JSON ou restaure um backup anterior.</p>
+          <h2 class="text-xl font-bold text-slate-900">Histórico de Sessões & Backup</h2>
+          <p class="text-sm text-slate-500">Exporte seus dados em JSON ou importe backups anteriores (compatível com todas as versões).</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="exportarBackupJSON()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl flex items-center gap-1.5 transition">
             <i data-lucide="download" class="w-4 h-4"></i> Exportar Backup JSON
           </button>
-          <label class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition">
+          <label class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow-sm">
             <i data-lucide="upload" class="w-4 h-4"></i> Importar JSON
             <input type="file" accept=".json" onchange="importarBackupJSON(event)" class="hidden" />
           </label>
@@ -423,7 +424,7 @@
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
                 <th class="py-3 px-4">Data</th>
-                <th class="py-3 px-4">Rodada</th>
+                <th class="py-3 px-4">Rodada / Sessão</th>
                 <th class="py-3 px-4">Matéria</th>
                 <th class="py-3 px-4 text-center">Questões</th>
                 <th class="py-3 px-4 text-center">Acertos</th>
@@ -445,7 +446,7 @@
        MODAL: FINALIZAR RODADA E ENVIAR ERROS
   ======================================================================== -->
   <div id="modal-finalizar-rodada" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5 animate-fade-in">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5">
       <div class="flex items-start justify-between">
         <div>
           <h3 class="text-lg font-bold text-slate-900">Finalizar Rodada & Enviar Erros</h3>
@@ -456,7 +457,6 @@
         </button>
       </div>
 
-      <!-- RESUMO NUMÉRICO -->
       <div class="grid grid-cols-4 gap-2 text-center">
         <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
           <div id="fin-total" class="text-lg font-bold text-slate-800">0</div>
@@ -478,7 +478,7 @@
 
       <div id="fin-aviso-pendentes" class="hidden p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
         <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
-        <span>Você ainda tem <strong id="fin-pendentes-num">0</strong> questão(ões) sem status marcado. Elas não serão contabilizadas como erro, a menos que você volte e marque.</span>
+        <span>Você ainda tem <strong id="fin-pendentes-num">0</strong> questão(ões) sem status marcado.</span>
       </div>
 
       <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 flex items-center justify-between">
@@ -527,9 +527,14 @@
           <input type="text" id="man-erro-codigo" placeholder="Q1922552" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Etiqueta de Origem</label>
-          <input type="text" id="man-erro-origem" placeholder="Ex: Lista Avulsa / Simulado" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo do Erro</label>
+          <select id="man-erro-motivo" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl bg-white"></select>
         </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Etiqueta de Origem</label>
+        <input type="text" id="man-erro-origem" placeholder="Ex: Lista Avulsa / Simulado" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl" />
       </div>
 
       <div>
@@ -550,7 +555,7 @@
   </div>
 
   <!-- =======================================================================
-       MODAL: ZOOM DE IMAGEM (TABELAS E GRÁFICOS)
+       MODAL: ZOOM DE IMAGEM
   ======================================================================== -->
   <div id="modal-zoom-imagem" onclick="fecharModal('modal-zoom-imagem')" class="hidden fixed inset-0 z-50 bg-slate-950/85 flex items-center justify-center p-4 cursor-zoom-out">
     <img id="zoom-imagem-src" src="" alt="Tabela ou gráfico ampliado" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl border border-slate-700" />
@@ -562,43 +567,321 @@
   <script>
     const STORAGE_KEY = 'cadernoErrosApp_edital_v1';
 
-    // Estado inicial padrão (preserva dados existentes caso já haja algo no localStorage)
+    // Edital completo do usuário preservado como padrão
     const ESTADO_PADRAO = {
-      materias: [
-        { id: 'mat-matfin', nome: 'Matemática Financeira', topicos: ['Juros Simples', 'Juros Compostos', 'Taxas Nominais, Efetivas e Equivalentes', 'Desconto Comercial e Racional', 'Sistemas de Amortização (SAC e Price)', 'Fluxo de Caixa, VPL e TIR'] },
-        { id: 'mat-port', nome: 'Língua Portuguesa', topicos: ['Interpretação de Texto', 'Sintaxe e Pontuação', 'Concordância Verbal e Nominal', 'Regência e Crase', 'Semântica e Reescrita'] },
-        { id: 'mat-banc', nome: 'Conhecimentos Bancários', topicos: ['Sistema Financeiro Nacional', 'Política Monetária e Copom', 'Mercado de Câmbio', 'Garantias do SFN', 'Lavagem de Dinheiro'] },
-        { id: 'mat-comex', nome: 'Comércio Internacional', topicos: ['Incoterms', 'Balança de Pagamentos', 'SISCOMEX, DU-E e LI', 'Blocos Econômicos (MERCOSUL / BRICS)', 'Regimes Aduaneiros'] }
+      theme: 'light',
+      goals: { dailyMinutes: 120, dailyQuestions: 30 },
+      errorReasons: [
+        { id: 'desconhecimento', label: 'Desconhecimento', color: '#a855f7', emoji: '🧠' },
+        { id: 'confusao', label: 'Confusão conceitual', color: '#3b82f6', emoji: '🔀' },
+        { id: 'desatencao', label: 'Desatenção', color: '#f97316', emoji: '⚡' },
+        { id: 'esquecimento', label: 'Esquecimento', color: '#eab308', emoji: '💭' },
+        { id: 'interpretacao', label: 'Erro de interpretação', color: '#ec4899', emoji: '🔍' },
+        { id: 'reason-1795055056162-yc5vq', label: 'Revisão geral', color: '#6366f1', emoji: '📌' }
       ],
-      rodadasGuiadas: [],
-      rodadas: [],
-      erros: []
+      disciplines: [
+        {
+          id: 'disc-lp',
+          name: 'Língua Portuguesa',
+          category: 'Conhecimentos Básicos',
+          color: '#3b82f6',
+          expanded: false,
+          topics: [
+            { id: 'top-lp-1', name: '1. Compreensão de textos', aula: true, revisao: true, questoes: 0, acertos: 0, lastStudy: '2026-11-16', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-2', name: '2. Ortografia oficial', aula: true, revisao: true, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-3', name: '3. Mecanismos de coesão textual', aula: true, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-4', name: '4. Significação das palavras', aula: true, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-5', name: '5. Emprego de tempos e modos verbais', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-6', name: '6. Emprego das classes de palavras', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-7', name: '7. Coordenação e de subordinação', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-8', name: '8. Emprego dos sinais de pontuação', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-9', name: '9. Concordância verbal e nominal', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-10', name: '10. Regência verbal e nominal', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-lp-11', name: '11. Emprego do sinal indicativo de crase', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-17', tagColor: 'none', notesHtml: '<p><b>Regra de Ouro da Crase:</b> Substitua a palavra feminina por uma masculina correspondente. Se aparecer <i>"ao"</i>, ocorre crase (<i>"à"</i>).</p>' },
+            { id: 'top-lp-12', name: '12. Colocação dos pronomes átonos', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-en',
+          name: 'Língua Inglesa',
+          category: 'Conhecimentos Básicos',
+          color: '#06b6d4',
+          expanded: false,
+          topics: [
+            { id: 'top-en-1', name: '1. Compreensão de texto escrito em língua inglesa', aula: true, revisao: true, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-en-2', name: '2. Itens gramaticais relevantes para a compreensão dos conteúdos semânticos', aula: true, revisao: true, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-mat',
+          name: 'Matemática e Estatística',
+          category: 'Conhecimentos Específicos',
+          color: '#8b5cf6',
+          expanded: false,
+          topics: [
+            { id: 'top-mat-2', name: 'Lógica', aula: true, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-3', name: 'Conjuntos', aula: true, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-5', name: 'Funções', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-6', name: 'Logaritmos', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-7', name: 'Trigonometria', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-8', name: 'Cálculo vetorial e matricial', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-9', name: 'Análise combinatória', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-10', name: 'Progressões', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-11', name: 'Sistemas de numeração', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-12', name: 'Probabilidade', aula: true, revisao: false, questoes: 15, acertos: 11, lastStudy: '2026-11-16', tagColor: 'none', notesHtml: '' },
+            { id: 'top-mat-13', name: 'Estatística descritiva (Medidas de Dispersão e Centralidade; Quartis e Box Plot; Dados Agrupados)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-eco',
+          name: 'Matemática Financeira',
+          category: 'Conhecimentos Específicos',
+          color: '#10b981',
+          expanded: false,
+          topics: [
+            { id: 'top-eco-1', name: 'Matemática financeira (Juros simples e compostos)', aula: false, revisao: false, questoes: 6, acertos: 6, lastStudy: '2026-11-19', tagColor: 'none', notesHtml: '' },
+            { id: 'top-eco-2', name: 'Métodos de avaliação econômica (Rendas Tabelas SAC/Price e amortização)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-eco-3', name: 'VPL e TIR', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795055997007-oz1tv', name: 'Matemática Financeira (Taxas proporcionais, equivalentes, nominais, efetivas, inflacionárias, aparentes e reais)', aula: false, revisao: false, questoes: 6, acertos: 6, lastStudy: '2026-11-19', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-1795056202634-98xfb',
+          name: 'Física',
+          category: 'Conhecimentos Específicos',
+          color: '#06b6d4',
+          expanded: false,
+          topics: [
+            { id: 'top-1795056286450-c3evf', name: 'Sistemas de unidades e Conversões / Conservação', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056291169-xr4pq', name: 'Hidrostática', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056298248-jjet6', name: 'Gases Ideais e Termodinâmica', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056314631-2j3kn', name: 'Calorimetria e Dilatação térmica', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056319533-orjkl', name: 'Mecanismos simples de transferência de calor (condução, convecção e radiação)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-1795056199605-5dtl8',
+          name: 'Economia',
+          category: 'Conhecimentos Específicos',
+          color: '#8b5cf6',
+          expanded: false,
+          topics: [
+            { id: 'top-1795056354245-43l6x', name: 'Oferta e Demanda', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056360971-ihed9', name: 'Elasticidade', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056367054-ga5i5', name: 'Consumidores, produtores e Eficiência dos Mercados', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056371727-24jzk', name: 'Curva de Possibilidade de Produção e Teoria do Consumidor', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056375625-y6pyc', name: 'Custos de Produção e Tipos de Mercados', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056380139-71vet', name: 'Contabilidade Nacional', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056385920-jxxvn', name: 'Política Fiscal e Monetária', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056389575-qg4e7', name: 'Política Cambial e Curva de Phillips', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056395433-lcw19', name: 'Teoria Keynesiana', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056399871-a5jvg', name: 'Modelo IS-LM', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-1795056191470-a3g6h',
+          name: 'Logística',
+          category: 'Conhecimentos Específicos',
+          color: '#f59e0b',
+          expanded: false,
+          topics: [
+            { id: 'top-1795056247402-dl0xh', name: 'Fundamentos da Logística (1 e 2)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056251853-pavr5', name: 'Cadeias de Suprimento (3, 4 e 5)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056255334-kr21q', name: 'Custos Logísticos (5 e 6)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056259855-e1we2', name: 'Conceitos de Tecnologia e Rastreamento de materiais (7 e 8)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056265236-guphs', name: 'Armazenagem e movimentação de cargas (8, 9 e 10)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056269226-9kkp2', name: 'Gestão e Avaliação de Estoques (11 e 12)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056273164-k72bc', name: 'Níveis de Serviço (13 e 14)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-1795056196161-s4lgb',
+          name: 'Marketing',
+          category: 'Conhecimentos Específicos',
+          color: '#ec4899',
+          expanded: false,
+          topics: [
+            { id: 'top-1795056211415-occhp', name: 'Conceitos e Fundamentos de Marketing (1 e 2)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056217831-mua1h', name: 'Estratégias de Marketing, Matriz SWOT, Marketing de Serviços e Endomarketing (3, 4 e 5)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056222927-j4ihe', name: 'Segmentação de Mercado e Sistemas de Informação (6 e 7)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056228850-be84z', name: 'Estratégias de Marketing e Distribuição (8, 9 e 10)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056233411-f8eda', name: 'Elementos de comunicação de Marketing, CRM e AIDA (11 e 12)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056238587-bsjbk', name: 'Estratégia Internacional (13)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-log',
+          name: 'Instalações portuárias, Portos e Transporte Marítimo e Dutoviário',
+          category: 'Conhecimentos Específicos',
+          color: '#ec4899',
+          expanded: false,
+          topics: [
+            { id: 'top-log-2', name: 'Serviços de apoio portuário e agentes marítimos / Portos e terminais marítimos / Avarias marítimas', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-log-3', name: 'Mercado mundial de afretamentos: estrutura e funcionamento', aula: true, revisao: true, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '<table><thead><tr><th>Modalidade</th><th>Responsabilidade (Gestão Náutica x Comercial)</th></tr></thead><tbody><tr><td><b>Voyage Charter (VCP)</b></td><td>Fretador mantém gestão náutica e comercial. Frete por viagem/tonelada.</td></tr><tr><td><b>Time Charter (TCP)</b></td><td>Fretador mantém gestão náutica (tripulação); Afretador assume gestão comercial (bunkers/portos).</td></tr><tr><td><b>Bareboat (Casco Nu)</b></td><td>Afretador recebe o navio desarmado e assume gestão náutica e comercial.</td></tr></tbody></table>' },
+            { id: 'top-log-6', name: 'Transporte marítimo: MARPOL73/78 + emenda 2004', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-1795056155359-k5yvh', name: 'Transporte Dutoviário', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-pet',
+          name: 'Petróleo, Gás e Energia',
+          category: 'Conhecimentos Específicos',
+          color: '#f59e0b',
+          expanded: false,
+          topics: [
+            { id: 'top-pet-1', name: 'Principais características do petróleo e seus principais derivados (GLP, gasolina e óleo diesel)', aula: true, revisao: false, questoes: 22, acertos: 19, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-pet-2', name: 'Gás natural', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-pet-3', name: 'Biocombustíveis', aula: true, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-pet-7', name: 'Lei nº 9.478/1997 e alterações', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-pet-8', name: 'Portaria ANP nº 881/2022', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-trib',
+          name: 'Legislação Tributária',
+          category: 'Conhecimentos Específicos',
+          color: '#6366f1',
+          expanded: false,
+          topics: [
+            { id: 'top-trib-1', name: 'Tributos: conhecimentos básicos', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-2', name: 'IRPJ e CSLL', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-3', name: 'IRRF', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-4', name: 'ICMS', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-5', name: 'Participações governamentais', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-6', name: 'PIS/PASEP', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-7', name: 'COFINS', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-8', name: 'CIDE (Lei nº 10.336/2001 e Lei nº 10.636/2002)', aula: true, revisao: false, questoes: 16, acertos: 11, lastStudy: '2026-11-17', tagColor: 'green', notesHtml: '' },
+            { id: 'top-trib-9', name: 'Legislação do ISS', aula: true, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-10', name: 'Contribuição Previdenciária (legislação, alíquotas, base de cálculo e apuração)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-11', name: 'Emenda Constitucional nº 132/2023', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' },
+            { id: 'top-trib-12', name: 'Lei Complementar nº 214/2025', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        },
+        {
+          id: 'disc-cont',
+          name: 'Contratação e Licitações',
+          category: 'Conhecimentos Específicos',
+          color: '#14b8a6',
+          expanded: false,
+          topics: [
+            { id: 'top-cont-1', name: 'Artigos 28 ao 91 da Lei nº 13.303/2016 (Estatuto Jurídico da empresa pública, da sociedade de economia mista e de suas subsidiárias)', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '2026-11-18', tagColor: 'none', notesHtml: '' },
+            { id: 'top-cont-2', name: 'Artigos 42 ao 49 da Lei Complementar nº 123/2006 e alterações da Lei Complementar nº 147/2014', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+          ]
+        }
+      ],
+      errors: [],
+      sessions: [],
+      rounds: [],
+      rodadasGuiadas: []
     };
 
     let estado = carregarEstado();
-    let previewQuestoes = []; // Questões temporárias na tela de importação em lote
+    let previewQuestoes = [];
     let rodadaAtivaId = null;
     let filtroResolucaoAtual = 'todas';
     let fonteResolucao = 'md';
     let activeRecallAtivo = false;
-    let hoveredPasteTarget = null; // { modo: 'preview'|'resolucao', index: number }
+    let hoveredPasteTarget = null;
     let cronometroSegundos = 0;
     let cronometroInterval = null;
     let cronometroPausado = false;
     let chartEvolucaoRodadas = null;
     let chartEvolucaoMaterias = null;
 
+    // Normalizador universal: aceita tanto o JSON da versão anterior (disciplines, errors, sessions, errorReasons)
+    // quanto o formato novo (rodadasGuiadas) sem perder nenhum dado.
+    function normalizarEstado(raw) {
+      const base = JSON.parse(JSON.stringify(ESTADO_PADRAO));
+      if (!raw || typeof raw !== 'object') return base;
+
+      base.theme = raw.theme || base.theme;
+      base.goals = raw.goals || base.goals;
+      if (Array.isArray(raw.errorReasons) && raw.errorReasons.length) {
+        base.errorReasons = raw.errorReasons;
+      }
+
+      // 1. Disciplinas & Tópicos
+      if (Array.isArray(raw.disciplines) && raw.disciplines.length) {
+        base.disciplines = raw.disciplines.map(d => ({
+          id: d.id || gerarId('disc'),
+          name: d.name || d.nome || 'Sem nome',
+          category: d.category || 'Conhecimentos Específicos',
+          color: d.color || '#4f46e5',
+          expanded: !!d.expanded,
+          topics: Array.isArray(d.topics)
+            ? d.topics.map(t => typeof t === 'string'
+                ? { id: gerarId('top'), name: t, aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }
+                : {
+                    id: t.id || gerarId('top'),
+                    name: t.name || t.nome || 'Geral',
+                    aula: !!t.aula,
+                    revisao: !!t.revisao,
+                    questoes: Number(t.questoes) || 0,
+                    acertos: Number(t.acertos) || 0,
+                    lastStudy: t.lastStudy || '',
+                    tagColor: t.tagColor || 'none',
+                    notesHtml: t.notesHtml || ''
+                  })
+            : []
+        }));
+      }
+
+      // 2. Erros (aceita tanto o formato antigo {statement, answer, notes, disciplineId, topicId, reasonId, status} quanto o novo)
+      if (Array.isArray(raw.errors)) {
+        base.errors = raw.errors.map(e => ({
+          id: e.id || gerarId('err'),
+          disciplineId: e.disciplineId || e.materiaId || '',
+          topicId: e.topicId || '',
+          topicName: e.topicName || e.assunto || '',
+          statement: e.statement || e.enunciado || '',
+          answer: e.answer || '',
+          link: e.link || '',
+          codigo: e.codigo || '',
+          date: e.date || (e.dataCriacao ? e.dataCriacao.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+          reasonId: e.reasonId || 'desconhecimento',
+          relevance: e.relevance || 'Alta',
+          status: e.status || (e.dominado ? 'Superado' : 'Pendente'),
+          notes: e.notes !== undefined ? e.notes : (e.bizu || ''),
+          origem: e.origem || (e.roundName ? e.roundName : ''),
+          tipoRegistro: e.tipoRegistro || 'erro',
+          imagem: e.imagem || '',
+          observacao: e.observacao || '',
+          revisoes: Number(e.revisoes) || 0,
+          rodadaId: e.rodadaId || '',
+          questaoId: e.questaoId || ''
+        }));
+      }
+
+      // 3. Sessões / Histórico
+      if (Array.isArray(raw.sessions)) {
+        base.sessions = raw.sessions.map(s => ({
+          id: s.id || gerarId('sess'),
+          roundId: s.roundId || s.rodadaGuiadaId || '',
+          roundName: s.roundName || s.titulo || '',
+          date: s.date || new Date().toISOString().slice(0, 10),
+          disciplineId: s.disciplineId || s.materiaId || '',
+          topicId: s.topicId || null,
+          durationMinutes: Number(s.durationMinutes) || 0,
+          questionsCount: Number(s.questionsCount) || 0,
+          correctCount: Number(s.correctCount) || 0,
+          duvidasCount: Number(s.duvidasCount) || 0,
+          errosCount: s.errosCount !== undefined
+            ? Number(s.errosCount)
+            : Math.max(0, (Number(s.questionsCount) || 0) - (Number(s.correctCount) || 0))
+        }));
+      }
+
+      base.rounds = Array.isArray(raw.rounds) ? raw.rounds : [];
+      base.rodadasGuiadas = Array.isArray(raw.rodadasGuiadas) ? raw.rodadasGuiadas : [];
+
+      return base;
+    }
+
     function carregarEstado() {
       try {
         const salvo = localStorage.getItem(STORAGE_KEY);
         if (salvo) {
-          const parsed = JSON.parse(salvo);
-          return {
-            materias: Array.isArray(parsed.materias) && parsed.materias.length ? parsed.materias : ESTADO_PADRAO.materias,
-            rodadasGuiadas: Array.isArray(parsed.rodadasGuiadas) ? parsed.rodadasGuiadas : [],
-            rodadas: Array.isArray(parsed.rodadas) ? parsed.rodadas : [],
-            erros: Array.isArray(parsed.erros) ? parsed.erros : []
-          };
+          return normalizarEstado(JSON.parse(salvo));
         }
       } catch (e) {
         console.warn('Erro ao ler localStorage:', e);
@@ -616,8 +899,29 @@
     }
 
     // =========================================================================
-    // UTILITÁRIOS GERAIS
+    // HELPERS PARA DISCIPLINAS E TÓPICOS
     // =========================================================================
+    function getDisciplina(discId) {
+      return estado.disciplines.find(d => d.id === discId) || null;
+    }
+
+    function getNomeDisciplina(discId) {
+      const d = getDisciplina(discId);
+      return d ? d.name : 'Geral';
+    }
+
+    function getNomeTopico(discId, topicId, fallbackName = '') {
+      if (fallbackName) return fallbackName;
+      const d = getDisciplina(discId);
+      if (!d || !topicId) return 'Geral';
+      const t = d.topics.find(tp => tp.id === topicId);
+      return t ? t.name : 'Geral';
+    }
+
+    function getMotivoErro(reasonId) {
+      return estado.errorReasons.find(r => r.id === reasonId) || estado.errorReasons[0] || { id: 'desconhecimento', label: 'Desconhecimento', emoji: '🧠', color: '#a855f7' };
+    }
+
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str)
@@ -653,7 +957,7 @@
       setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
-      }, 3400);
+      }, 3600);
     }
 
     function fecharModal(id) {
@@ -676,7 +980,7 @@
         badgeRodadas.classList.add('hidden');
       }
 
-      const semBizu = estado.erros.filter(e => !e.dominado && (!e.bizu || !e.bizu.trim())).length;
+      const semBizu = estado.errors.filter(e => e.status !== 'Superado' && (!e.notes || !e.notes.trim())).length;
       const badgeErros = document.getElementById('badge-erros-pendentes');
       if (semBizu > 0) {
         badgeErros.textContent = semBizu;
@@ -732,7 +1036,7 @@
       return /\b(quadro|tabela|gr[áa]fico|figura|imagem|organograma|fluxograma|dados)\s+(a\s+seguir|abaixo|acima|apresentad[oa]s?)\b/i.test(texto);
     }
 
-    function parseTextoRodada(rawText, materiaId, subtopicoPadrao) {
+    function parseTextoRodada(rawText, disciplineId, topicIdPadrao) {
       const textoNormalizado = rawText.replace(/\r\n/g, '\n').trim();
       if (!textoNormalizado) return [];
 
@@ -740,7 +1044,6 @@
       const blocos = [];
       let blocoAtual = null;
 
-      // Regex para início de questão: "1- (Q1922552)...", "2. Q876056...", "Questão 3 - ..."
       const regexInicioQuestao = /^(?:quest[ãa]o\s*)?(\d{1,3})\s*(?:[-–—.)\]]|:)\s*(.*)$/i;
       const regexInicioDiretoCodigo = /^(\d{1,3})\s+(\(?Q\d{4,10}\b.*)$/i;
 
@@ -774,7 +1077,6 @@
         } else if (blocoAtual) {
           blocoAtual.linhas.push(linhas[i]);
         } else {
-          // Caso o usuário cole sem número na primeira questão
           blocoAtual = {
             numero: 1,
             primeiraLinhaResto: linhas[i],
@@ -785,16 +1087,13 @@
       if (blocoAtual) blocos.push(blocoAtual);
 
       return blocos.map((bloco, idx) => {
-        // 1. Extrair código Q... da primeira linha (ou das 2 primeiras linhas)
         const cabecalhoBruto = [bloco.primeiraLinhaResto, bloco.linhas[0] || ''].join(' ');
         const matchCodigo = cabecalhoBruto.match(/\(?\b(Q\d{4,10})\b\)?/i);
         const codigo = matchCodigo ? matchCodigo[1].toUpperCase() : '';
 
-        // Extrair URL se já vier colada no cabeçalho
         const matchUrl = bloco.primeiraLinhaResto.match(/https?:\/\/[^\s\)]+/i);
         const urlPersonalizada = matchUrl ? matchUrl[0] : '';
 
-        // Extrair Banca e Ano
         let banca = '';
         for (const b of BANCAS_CONHECIDAS) {
           if (new RegExp(`\\b${b}\\b`, 'i').test(cabecalhoBruto)) {
@@ -805,14 +1104,12 @@
         const matchAno = cabecalhoBruto.match(/\b(19\d{2}|20\d{2})\b/);
         const ano = matchAno ? matchAno[1] : '';
 
-        // Limpar primeiraLinhaResto se ela for apenas metadados (ex: "(Q1922552) CESGRANRIO - 2023 - Banco do Brasil")
         let primeiraLinhaLimpa = bloco.primeiraLinhaResto
           .replace(/\(?\bQ\d{4,10}\b\)?/i, '')
           .replace(/https?:\/\/[^\s\)]+/gi, '')
           .replace(/^[\s\-–—.:/]+/, '')
           .trim();
 
-        // Se a primeira linha limpa for curta e parecer apenas "Banca - Ano - Órgão", guardamos como origemMeta
         let origemMeta = [banca, ano].filter(Boolean).join(' • ');
         const todasLinhasConteudo = [];
 
@@ -829,7 +1126,6 @@
 
         todasLinhasConteudo.push(...bloco.linhas);
 
-        // 2. Separar Enunciado e Alternativas (A, B, C, D, E)
         const linhasEnunciado = [];
         const alternativas = [];
         let altAtual = null;
@@ -847,7 +1143,6 @@
           const mSozinha = lTrim.match(regexAltLetraSozinha);
           const mInline = !mSozinha ? lTrim.match(regexAltInline) : null;
 
-          // Verificar ordem esperada da alternativa (A=0, B=1, C=2, D=3, E=4) para evitar falsos positivos no meio do texto
           const letraCandidata = (mSozinha ? mSozinha[1] : mInline ? mInline[1] : '').toUpperCase();
           const idxEsperado = 'ABCDE'.indexOf(letraCandidata);
           const ordemValida = letraCandidata && (
@@ -881,12 +1176,12 @@
           origemMeta,
           enunciado: enunciadoFinal,
           alternativas,
-          subtopico: subtopicoPadrao || '',
+          topicId: topicIdPadrao || '',
           imagem: '',
           observacao: '',
           sugereImagem: detectarNecessidadeImagem(enunciadoFinal),
-          status: '', // 'acertei' | 'duvida' | 'errei' | ''
-          riscadas: [] // letras riscadas no modo Papel & Caneta
+          status: '',
+          riscadas: []
         };
       });
     }
@@ -901,12 +1196,10 @@
       document.getElementById('rg-sub-resolver').classList.add('hidden');
       document.getElementById('rg-sub-importar').classList.remove('hidden');
 
-      // Popular matérias
       const selMat = document.getElementById('imp-materia');
-      selMat.innerHTML = estado.materias.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.nome)}</option>`).join('');
+      selMat.innerHTML = estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('');
       atualizarSubtopicosImportacao();
 
-      // Sugerir data de hoje no título se estiver vazio
       const inputTitulo = document.getElementById('imp-titulo');
       if (!inputTitulo.value.trim()) {
         const hoje = new Date();
@@ -918,21 +1211,21 @@
     }
 
     function atualizarSubtopicosImportacao() {
-      const matId = document.getElementById('imp-materia').value;
-      const mat = estado.materias.find(m => m.id === matId);
+      const discId = document.getElementById('imp-materia').value;
+      const disc = getDisciplina(discId);
       const selSub = document.getElementById('imp-subtopico-padrao');
-      const topicos = mat ? mat.topicos : [];
+      const topics = disc ? disc.topics : [];
       selSub.innerHTML = `<option value="">-- Geral / Sem subtópico fixo --</option>` +
-        topicos.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+        topics.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
     }
 
     function carregarExemploRodada() {
-      const matFin = estado.materias.find(m => m.nome.toLowerCase().includes('matemática')) || estado.materias[0];
-      if (matFin) {
-        document.getElementById('imp-materia').value = matFin.id;
+      const discMatFin = estado.disciplines.find(d => d.id === 'disc-eco' || d.name.toLowerCase().includes('financeira')) || estado.disciplines[0];
+      if (discMatFin) {
+        document.getElementById('imp-materia').value = discMatFin.id;
         atualizarSubtopicosImportacao();
         const selSub = document.getElementById('imp-subtopico-padrao');
-        const taxOpt = Array.from(selSub.options).find(o => o.value.toLowerCase().includes('taxa'));
+        const taxOpt = Array.from(selSub.options).find(o => o.textContent.toLowerCase().includes('taxa'));
         if (taxOpt) selSub.value = taxOpt.value;
       }
 
@@ -971,21 +1264,20 @@ E) R$ 11.576,25`;
 
     function processarTextoRodada() {
       const bruto = document.getElementById('imp-texto-bruto').value;
-      const matId = document.getElementById('imp-materia').value;
-      const subPadrao = document.getElementById('imp-subtopico-padrao').value;
+      const discId = document.getElementById('imp-materia').value;
+      const topicPadrao = document.getElementById('imp-subtopico-padrao').value;
 
       if (!bruto.trim()) {
         mostrarToast('Cole o texto das questões antes de processar.', 'aviso');
         return;
       }
 
-      previewQuestoes = parseTextoRodada(bruto, matId, subPadrao);
+      previewQuestoes = parseTextoRodada(bruto, discId, topicPadrao);
       if (!previewQuestoes.length) {
         mostrarToast('Não foi possível identificar questões no texto colado.', 'erro');
         return;
       }
 
-      // Atualiza sugestão de contagem no título
       const inputTitulo = document.getElementById('imp-titulo');
       if (inputTitulo.value && !/\d+q/i.test(inputTitulo.value)) {
         inputTitulo.value = `${inputTitulo.value.trim()} – ${previewQuestoes.length}q`;
@@ -997,9 +1289,9 @@ E) R$ 11.576,25`;
     }
 
     function renderPreviewImportacao() {
-      const matId = document.getElementById('imp-materia').value;
-      const mat = estado.materias.find(m => m.id === matId);
-      const topicos = mat ? mat.topicos : [];
+      const discId = document.getElementById('imp-materia').value;
+      const disc = getDisciplina(discId);
+      const topics = disc ? disc.topics : [];
 
       document.getElementById('imp-count-badge').textContent = `${previewQuestoes.length} questão(ões)`;
       const container = document.getElementById('imp-preview-lista');
@@ -1028,31 +1320,28 @@ E) R$ 11.576,25`;
               </button>
             </div>
 
-            <!-- Subtópico e URL personalizada -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">Subtópico desta questão</label>
-                <select onchange="atualizarCampoPreview(${idx}, 'subtopico', this.value)" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white">
+                <select onchange="atualizarCampoPreview(${idx}, 'topicId', this.value)" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white">
                   <option value="">-- Geral da matéria --</option>
-                  ${topicos.map(t => `<option value="${escapeHtml(t)}" ${q.subtopico === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+                  ${topics.map(t => `<option value="${escapeHtml(t.id)}" ${q.topicId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-semibold text-slate-500 mb-1">URL Personalizada QConcursos (opcional — sobrescreve o link automático)</label>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">URL Personalizada QConcursos (opcional)</label>
                 <input type="url" value="${escapeHtml(q.urlPersonalizada)}" onchange="atualizarCampoPreview(${idx}, 'urlPersonalizada', this.value)"
                        placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes/..."
                        class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-indigo-500" />
               </div>
             </div>
 
-            <!-- Enunciado editável -->
             <div>
               <label class="block text-[11px] font-semibold text-slate-500 mb-1">Enunciado extraído</label>
               <textarea rows="3" onchange="atualizarCampoPreview(${idx}, 'enunciado', this.value)"
                         class="w-full p-2.5 text-sm text-slate-800 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none">${escapeHtml(q.enunciado)}</textarea>
             </div>
 
-            <!-- Alternativas extraídas -->
             ${q.alternativas.length ? `
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 ${q.alternativas.map((alt, aIdx) => `
@@ -1065,7 +1354,7 @@ E) R$ 11.576,25`;
               </div>
             ` : `<p class="text-xs text-slate-400 italic">Nenhuma alternativa A-E separada (questão aberta ou Certo/Errado).</p>`}
 
-            <!-- Área de Suporte a Tabelas/Gráficos (Ctrl+V ou Observação) -->
+            <!-- Suporte a Tabelas/Gráficos (Ctrl+V ou Observação) -->
             <div class="pt-2 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
               <div>
                 <div class="flex items-center justify-between mb-1">
@@ -1132,7 +1421,7 @@ E) R$ 11.576,25`;
     }
 
     function adicionarQuestaoManualPreview() {
-      const subPadrao = document.getElementById('imp-subtopico-padrao').value;
+      const topicPadrao = document.getElementById('imp-subtopico-padrao').value;
       previewQuestoes.push({
         id: gerarId('q'),
         numero: previewQuestoes.length + 1,
@@ -1149,7 +1438,7 @@ E) R$ 11.576,25`;
           { letra: 'D', texto: '' },
           { letra: 'E', texto: '' }
         ],
-        subtopico: subPadrao || '',
+        topicId: topicPadrao || '',
         imagem: '',
         observacao: '',
         sugereImagem: false,
@@ -1166,14 +1455,12 @@ E) R$ 11.576,25`;
         return;
       }
       const titulo = document.getElementById('imp-titulo').value.trim() || `Rodada ${new Date().toLocaleDateString('pt-BR')}`;
-      const matId = document.getElementById('imp-materia').value;
-      const mat = estado.materias.find(m => m.id === matId);
+      const discId = document.getElementById('imp-materia').value;
 
       const novaRodada = {
         id: gerarId('rod'),
         titulo,
-        materiaId: matId,
-        materiaNome: mat ? mat.nome : 'Geral',
+        disciplineId: discId,
         dataCriacao: new Date().toISOString(),
         dataFinalizacao: null,
         status: 'em_andamento',
@@ -1184,7 +1471,6 @@ E) R$ 11.576,25`;
       estado.rodadasGuiadas.unshift(novaRodada);
       salvarEstado();
 
-      // Limpar formulário de importação
       document.getElementById('imp-texto-bruto').value = '';
       document.getElementById('imp-preview-wrapper').classList.add('hidden');
       previewQuestoes = [];
@@ -1265,11 +1551,10 @@ E) R$ 11.576,25`;
       if (file) aplicarImagemNaQuestao(file, modo, index);
     }
 
-    // Listener global para Ctrl+V quando o mouse está sobre uma questão
     document.addEventListener('paste', (event) => {
       if (!hoveredPasteTarget) return;
       const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return; // Não intercepta se o usuário estiver colando texto num input
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       handlePasteEvento(event, hoveredPasteTarget.modo, hoveredPasteTarget.index);
     });
 
@@ -1312,12 +1597,13 @@ E) R$ 11.576,25`;
         const respondidas = acertos + duvidas + erros;
         const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
         const concluida = r.status === 'concluida';
+        const nomeDisc = getNomeDisciplina(r.disciplineId);
 
         return `
           <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-indigo-300 transition">
             <div class="space-y-2">
               <div class="flex items-start justify-between gap-2">
-                <span class="px-2.5 py-0.5 text-[11px] font-semibold bg-indigo-50 text-indigo-700 rounded-full">${escapeHtml(r.materiaNome)}</span>
+                <span class="px-2.5 py-0.5 text-[11px] font-semibold bg-indigo-50 text-indigo-700 rounded-full">${escapeHtml(nomeDisc)}</span>
                 <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${concluida ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
                   ${concluida ? `Concluída (${pct}%)` : `Em andamento (${respondidas}/${total})`}
                 </span>
@@ -1372,7 +1658,7 @@ E) R$ 11.576,25`;
       document.getElementById('rg-sub-resolver').classList.remove('hidden');
 
       document.getElementById('res-titulo').textContent = rodada.titulo;
-      document.getElementById('res-materia-badge').textContent = rodada.materiaNome;
+      document.getElementById('res-materia-badge').textContent = getNomeDisciplina(rodada.disciplineId);
 
       const badgeStatus = document.getElementById('res-status-badge');
       if (rodada.status === 'concluida') {
@@ -1469,8 +1755,8 @@ E) R$ 11.576,25`;
       const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
       if (!rodada) return;
 
-      const mat = estado.materias.find(m => m.id === rodada.materiaId);
-      const topicos = mat ? mat.topicos : [];
+      const disc = getDisciplina(rodada.disciplineId);
+      const topics = disc ? disc.topics : [];
       const classeFonte = fonteResolucao === 'lg' ? 'enunciado-lg' : fonteResolucao === 'sm' ? 'enunciado-sm' : 'enunciado-md';
 
       const questoesFiltradas = rodada.questoes
@@ -1489,6 +1775,7 @@ E) R$ 11.576,25`;
 
       container.innerHTML = questoesFiltradas.map(({ q, idxOriginal }) => {
         const linkQC = gerarLinkQConcursos(q.codigo, q.urlPersonalizada);
+        const nomeTopico = q.topicId ? getNomeTopico(rodada.disciplineId, q.topicId) : '';
         const bordaStatus = q.status === 'acertei'
           ? 'border-emerald-300 ring-1 ring-emerald-100'
           : q.status === 'duvida'
@@ -1503,7 +1790,7 @@ E) R$ 11.576,25`;
                    onmouseleave="if(hoveredPasteTarget && hoveredPasteTarget.index===${idxOriginal}) hoveredPasteTarget=null">
             <div class="grid grid-cols-1 lg:grid-cols-12">
 
-              <!-- COLUNA ESQUERDA: LEITURA LIMPA (PAPEL & CANETA) -->
+              <!-- LEITURA LIMPA (PAPEL & CANETA) -->
               <div class="lg:col-span-8 p-5 sm:p-6 space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="flex flex-wrap items-center gap-2">
@@ -1511,15 +1798,13 @@ E) R$ 11.576,25`;
                     ${q.codigo ? `<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono text-xs font-semibold">${escapeHtml(q.codigo)}</span>` : ''}
                     ${q.origemMeta ? `<span class="text-xs font-medium text-slate-500">${escapeHtml(q.origemMeta)}</span>` : ''}
                   </div>
-                  ${q.subtopico ? `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium">${escapeHtml(q.subtopico)}</span>` : ''}
+                  ${nomeTopico ? `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium max-w-xs truncate" title="${escapeHtml(nomeTopico)}">${escapeHtml(nomeTopico)}</span>` : ''}
                 </div>
 
-                <!-- ENUNCIADO -->
                 <div class="text-slate-800 whitespace-pre-line ${classeFonte}">
                   ${escapeHtml(q.enunciado)}
                 </div>
 
-                <!-- PRINT / OBSERVAÇÃO DE TABELA OU GRÁFICO -->
                 ${q.imagem ? `
                   <div class="pt-1">
                     <img src="${q.imagem}" onclick="abrirZoomImagem('${q.imagem}')" alt="Apoio da questão"
@@ -1538,7 +1823,6 @@ E) R$ 11.576,25`;
                   </div>
                 ` : ''}
 
-                <!-- ALTERNATIVAS (CLIQUE DISCRETO PARA RISCAR ELIMINADAS NO PAPEL) -->
                 ${q.alternativas.length ? `
                   <div class="space-y-2 pt-1">
                     ${q.alternativas.map(alt => {
@@ -1558,10 +1842,9 @@ E) R$ 11.576,25`;
                 ` : ''}
               </div>
 
-              <!-- COLUNA DIREITA: PAINEL LATERAL DE AÇÃO RÁPIDA -->
+              <!-- PAINEL LATERAL DE AÇÃO RÁPIDA -->
               <div class="lg:col-span-4 bg-slate-50/80 border-t lg:border-t-0 lg:border-l border-slate-200 p-5 flex flex-col justify-between space-y-4">
                 <div class="space-y-4">
-                  <!-- BOTÃO DISCRETO QCONCURSOS -->
                   <div class="flex items-center justify-between gap-2">
                     ${linkQC ? `
                       <a href="${escapeHtml(linkQC)}" target="_blank" rel="noopener noreferrer"
@@ -1580,7 +1863,6 @@ E) R$ 11.576,25`;
                     </button>
                   </div>
 
-                  <!-- SELETOR RÁPIDO DE STATUS -->
                   <div>
                     <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Resultado após conferir gabarito</label>
                     <div class="grid grid-cols-1 gap-2">
@@ -1604,7 +1886,6 @@ E) R$ 11.576,25`;
                     </div>
                   </div>
 
-                  <!-- SELETOR DO SUBTÓPICO ESPECÍFICO -->
                   <div>
                     <div class="flex items-center justify-between mb-1">
                       <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtópico da Questão</label>
@@ -1612,13 +1893,12 @@ E) R$ 11.576,25`;
                     </div>
                     <select onchange="alterarSubtopicoResolucao(${idxOriginal}, this.value)"
                             class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white text-slate-700 focus:border-indigo-500 outline-none">
-                      <option value="">-- Geral (${escapeHtml(rodada.materiaNome)}) --</option>
-                      ${topicos.map(t => `<option value="${escapeHtml(t)}" ${q.subtopico === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+                      <option value="">-- Geral (${escapeHtml(getNomeDisciplina(rodada.disciplineId))}) --</option>
+                      ${topics.map(t => `<option value="${escapeHtml(t.id)}" ${q.topicId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
                     </select>
                   </div>
                 </div>
 
-                <!-- ATALHO RÁPIDO PARA COLAR PRINT DURANTE A RESOLUÇÃO -->
                 ${!q.imagem ? `
                   <div tabindex="0" onpaste="handlePasteEvento(event, 'resolucao', ${idxOriginal})"
                        class="paste-zone border border-dashed border-slate-300 rounded-xl p-2.5 text-center cursor-pointer bg-white/70 hover:bg-white transition">
@@ -1638,8 +1918,6 @@ E) R$ 11.576,25`;
     function marcarStatusQuestao(idx, novoStatus) {
       const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
       if (!rodada || !rodada.questoes[idx]) return;
-
-      // Permite desmarcar clicando novamente no mesmo botão
       rodada.questoes[idx].status = rodada.questoes[idx].status === novoStatus ? '' : novoStatus;
       salvarEstado();
       atualizarCabecalhoResolucao();
@@ -1660,10 +1938,10 @@ E) R$ 11.576,25`;
       renderQuestoesResolucao();
     }
 
-    function alterarSubtopicoResolucao(qIdx, subtopico) {
+    function alterarSubtopicoResolucao(qIdx, topicId) {
       const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
       if (!rodada || !rodada.questoes[qIdx]) return;
-      rodada.questoes[qIdx].subtopico = subtopico;
+      rodada.questoes[qIdx].topicId = topicId;
       salvarEstado();
       renderQuestoesResolucao();
     }
@@ -1671,14 +1949,25 @@ E) R$ 11.576,25`;
     function criarSubtopicoRapidoResolucao(qIdx) {
       const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
       if (!rodada) return;
-      const mat = estado.materias.find(m => m.id === rodada.materiaId);
-      if (!mat) return;
+      const disc = getDisciplina(rodada.disciplineId);
+      if (!disc) return;
 
-      const novo = prompt(`Novo subtópico para ${mat.nome}:`);
+      const novo = prompt(`Novo subtópico para ${disc.name}:`);
       if (!novo || !novo.trim()) return;
       const nomeLimpo = novo.trim();
-      if (!mat.topicos.includes(nomeLimpo)) mat.topicos.push(nomeLimpo);
-      rodada.questoes[qIdx].subtopico = nomeLimpo;
+      const novoTopico = {
+        id: gerarId('top'),
+        name: nomeLimpo,
+        aula: false,
+        revisao: false,
+        questoes: 0,
+        acertos: 0,
+        lastStudy: new Date().toISOString().slice(0, 10),
+        tagColor: 'none',
+        notesHtml: ''
+      };
+      disc.topics.push(novoTopico);
+      rodada.questoes[qIdx].topicId = novoTopico.id;
       salvarEstado();
       renderQuestoesResolucao();
       mostrarToast(`Subtópico "${nomeLimpo}" adicionado!`);
@@ -1722,7 +2011,7 @@ E) R$ 11.576,25`;
       const pendentes = total - (acertos + duvidas + erros);
       const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
 
-      document.getElementById('modal-fin-subtitulo').textContent = `${rodada.titulo} • ${rodada.materiaNome}`;
+      document.getElementById('modal-fin-subtitulo').textContent = `${rodada.titulo} • ${getNomeDisciplina(rodada.disciplineId)}`;
       document.getElementById('fin-total').textContent = total;
       document.getElementById('fin-acertos').textContent = acertos;
       document.getElementById('fin-duvidas').textContent = duvidas;
@@ -1751,70 +2040,86 @@ E) R$ 11.576,25`;
       const duvidas = rodada.questoes.filter(q => q.status === 'duvida').length;
       const erros = rodada.questoes.filter(q => q.status === 'errei').length;
       const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
+      const hojeIso = new Date().toISOString().slice(0, 10);
 
-      // Extrair etiqueta limpa (ex: "Rodada 09/09" se vier "Rodada 09/09 – Taxas – 10q")
       const etiquetaOrigem = rodada.titulo.split('–')[0].trim() || rodada.titulo;
+      const disc = getDisciplina(rodada.disciplineId);
 
-      // Enviar questões marcadas como Errei (e Dúvida, se marcado) para o Caderno de Erros
+      // Atualiza estatísticas dos tópicos estudados
+      if (disc && rodada.status !== 'concluida') {
+        rodada.questoes.forEach(q => {
+          if (!q.topicId) return;
+          const top = disc.topics.find(t => t.id === q.topicId);
+          if (top) {
+            top.questoes = (top.questoes || 0) + 1;
+            if (q.status === 'acertei' || q.status === 'duvida') {
+              top.acertos = (top.acertos || 0) + 1;
+            }
+            top.lastStudy = hojeIso;
+          }
+        });
+      }
+
+      // Envia erros (e dúvidas, se marcado) para estado.errors no formato unificado
       let enviados = 0;
       rodada.questoes.forEach(q => {
         const deveEnviar = q.status === 'errei' || (incluirDuvidas && q.status === 'duvida');
         if (!deveEnviar) return;
 
-        // Evita duplicar caso a mesma rodada seja re-finalizada
-        const jaExiste = estado.erros.some(e => e.rodadaId === rodada.id && e.questaoId === q.id);
+        const jaExiste = estado.errors.some(e => e.rodadaId === rodada.id && e.questaoId === q.id);
         if (jaExiste) return;
 
         const textoAlternativas = q.alternativas.length
           ? '\n\n' + q.alternativas.map(a => `${a.letra}) ${a.texto}`).join('\n')
           : '';
 
-        estado.erros.unshift({
+        estado.errors.unshift({
           id: gerarId('err'),
           rodadaId: rodada.id,
           questaoId: q.id,
-          materiaId: rodada.materiaId,
-          materiaNome: rodada.materiaNome,
-          assunto: q.subtopico || 'Geral',
+          disciplineId: rodada.disciplineId,
+          topicId: q.topicId || '',
+          topicName: getNomeTopico(rodada.disciplineId, q.topicId),
           codigo: q.codigo || '',
           link: gerarLinkQConcursos(q.codigo, q.urlPersonalizada),
-          banca: q.origemMeta || '',
-          enunciado: (q.enunciado + textoAlternativas).trim(),
+          statement: (q.enunciado + textoAlternativas).trim(),
+          answer: '',
           imagem: q.imagem || '',
           observacao: q.observacao || '',
           origem: etiquetaOrigem,
-          origemCompleta: rodada.titulo,
           tipoRegistro: q.status === 'duvida' ? 'duvida' : 'erro',
-          bizu: '', // Aberto para o usuário preencher seu bizu ou motivo do erro
+          reasonId: 'desconhecimento',
+          relevance: 'Alta',
+          status: 'Pendente',
+          notes: '',
           revisoes: 0,
-          dominado: false,
-          dataCriacao: new Date().toISOString()
+          date: hojeIso
         });
         enviados++;
       });
 
-      // Atualiza status da rodada guiada
       rodada.status = 'concluida';
       rodada.dataFinalizacao = new Date().toISOString();
       rodada.percentualAcerto = pct;
 
-      // Registra também no histórico geral de rodadas
-      const idxHist = estado.rodadas.findIndex(h => h.rodadaGuiadaId === rodada.id);
-      const registroHistorico = {
-        id: idxHist >= 0 ? estado.rodadas[idxHist].id : gerarId('hist'),
-        rodadaGuiadaId: rodada.id,
-        data: new Date().toISOString(),
-        titulo: rodada.titulo,
-        materiaId: rodada.materiaId,
-        materiaNome: rodada.materiaNome,
-        totalQuestoes: total,
-        acertos,
-        duvidas,
-        erros,
-        percentual: pct
+      // Registra em estado.sessions (compatível com o gráfico e histórico original)
+      const duracaoMin = Math.max(1, Math.round((rodada.tempoSegundos || 0) / 60));
+      const idxSess = estado.sessions.findIndex(s => s.roundId === rodada.id);
+      const novaSessao = {
+        id: idxSess >= 0 ? estado.sessions[idxSess].id : gerarId('sess'),
+        roundId: rodada.id,
+        roundName: rodada.titulo,
+        date: hojeIso,
+        disciplineId: rodada.disciplineId,
+        topicId: null,
+        durationMinutes: duracaoMin,
+        questionsCount: total,
+        correctCount: acertos,
+        duvidasCount: duvidas,
+        errosCount: erros
       };
-      if (idxHist >= 0) estado.rodadas[idxHist] = registroHistorico;
-      else estado.rodadas.unshift(registroHistorico);
+      if (idxSess >= 0) estado.sessions[idxSess] = novaSessao;
+      else estado.sessions.unshift(novaSessao);
 
       pararCronometro();
       salvarEstado();
@@ -1833,18 +2138,18 @@ E) R$ 11.576,25`;
     }
 
     // =========================================================================
-    // CADERNO DE ERROS (COM CAMPO ABERTO PARA BIZU + ACTIVE RECALL)
+    // CADERNO DE ERROS
     // =========================================================================
     function popularFiltrosErros() {
       const selMat = document.getElementById('filtro-erro-materia');
       const valMatAtual = selMat.value;
       selMat.innerHTML = `<option value="todas">Todas as matérias</option>` +
-        estado.materias.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.nome)}</option>`).join('');
+        estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('');
       if (valMatAtual) selMat.value = valMatAtual;
 
       const selOrigem = document.getElementById('filtro-erro-origem');
       const valOrigAtual = selOrigem.value;
-      const origensUnicas = [...new Set(estado.erros.map(e => e.origem).filter(Boolean))];
+      const origensUnicas = [...new Set(estado.errors.map(e => e.origem).filter(Boolean))];
       selOrigem.innerHTML = `<option value="todas">Todas as origens</option>` +
         origensUnicas.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
       if (valOrigAtual) selOrigem.value = valOrigAtual;
@@ -1867,16 +2172,22 @@ E) R$ 11.576,25`;
       const fOrigem = document.getElementById('filtro-erro-origem').value;
       const fBusca = document.getElementById('filtro-erro-busca').value.trim().toLowerCase();
 
-      const filtrados = estado.erros.filter(e => {
-        if (fMateria && fMateria !== 'todas' && e.materiaId !== fMateria) return false;
+      const filtrados = estado.errors.filter(e => {
+        const superado = e.status === 'Superado';
+        const semBizu = !e.notes || !e.notes.trim();
+
+        if (fMateria && fMateria !== 'todas' && e.disciplineId !== fMateria) return false;
         if (fOrigem && fOrigem !== 'todas' && e.origem !== fOrigem) return false;
-        if (fStatus === 'sem-bizu' && e.bizu && e.bizu.trim()) return false;
-        if (fStatus === 'erro' && e.tipoRegistro !== 'erro') return false;
+        if (fStatus === 'sem-bizu' && !semBizu) return false;
+        if (fStatus === 'erro' && e.tipoRegistro === 'duvida') return false;
         if (fStatus === 'duvida' && e.tipoRegistro !== 'duvida') return false;
-        if (fStatus === 'ativos' && e.dominado) return false;
-        if (fStatus === 'dominados' && !e.dominado) return false;
+        if (fStatus === 'ativos' && superado) return false;
+        if (fStatus === 'dominados' && !superado) return false;
+
         if (fBusca) {
-          const alvo = `${e.codigo} ${e.assunto} ${e.materiaNome} ${e.enunciado} ${e.bizu} ${e.origem}`.toLowerCase();
+          const nomeDisc = getNomeDisciplina(e.disciplineId);
+          const nomeTop = getNomeTopico(e.disciplineId, e.topicId, e.topicName);
+          const alvo = `${e.codigo} ${nomeDisc} ${nomeTop} ${e.statement} ${e.answer} ${e.notes} ${e.origem}`.toLowerCase();
           if (!alvo.includes(fBusca)) return false;
         }
         return true;
@@ -1894,19 +2205,22 @@ E) R$ 11.576,25`;
       }
 
       container.innerHTML = filtrados.map(e => {
-        const semBizu = !e.bizu || !e.bizu.trim();
+        const semBizu = !e.notes || !e.notes.trim();
         const ehDuvida = e.tipoRegistro === 'duvida';
+        const superado = e.status === 'Superado';
+        const nomeDisc = getNomeDisciplina(e.disciplineId);
+        const nomeTop = getNomeTopico(e.disciplineId, e.topicId, e.topicName);
+        const motivo = getMotivoErro(e.reasonId);
 
         return `
-          <div class="bg-white rounded-2xl border ${e.dominado ? 'border-emerald-200 bg-emerald-50/20' : semBizu ? 'border-amber-300' : 'border-slate-200'} p-5 shadow-sm space-y-4">
-            <!-- TOPO: ETIQUETAS E LINK -->
+          <div class="bg-white rounded-2xl border ${superado ? 'border-emerald-200 bg-emerald-50/20' : semBizu ? 'border-amber-300' : 'border-slate-200'} p-5 shadow-sm space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${ehDuvida ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}">
                   ${ehDuvida ? 'Dúvida / Chute' : 'Erro'}
                 </span>
-                <span class="px-2.5 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 rounded-full">${escapeHtml(e.materiaNome)}</span>
-                <span class="px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-full">${escapeHtml(e.assunto)}</span>
+                <span class="px-2.5 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 rounded-full">${escapeHtml(nomeDisc)}</span>
+                <span class="px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-full max-w-xs truncate" title="${escapeHtml(nomeTop)}">${escapeHtml(nomeTop)}</span>
                 ${e.origem ? `
                   <span class="px-2.5 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded-full flex items-center gap-1">
                     <i data-lucide="tag" class="w-3 h-3"></i> ${escapeHtml(e.origem)}
@@ -1916,18 +2230,22 @@ E) R$ 11.576,25`;
                 ${semBizu ? `<span class="px-2 py-0.5 text-[11px] font-bold bg-amber-500 text-white rounded-full">Escrever Bizu</span>` : ''}
               </div>
 
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <select onchange="alterarMotivoErro('${e.id}', this.value)" class="px-2.5 py-1 text-xs font-medium border border-slate-200 rounded-xl bg-white text-slate-700" title="Motivo do erro">
+                  ${estado.errorReasons.map(r => `<option value="${escapeHtml(r.id)}" ${e.reasonId === r.id ? 'selected' : ''}>${escapeHtml(r.emoji)} ${escapeHtml(r.label)}</option>`).join('')}
+                </select>
+
                 ${e.link ? `
                   <a href="${escapeHtml(e.link)}" target="_blank" rel="noopener noreferrer"
                      class="px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-xl flex items-center gap-1 transition">
                     QConcursos <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   </a>
                 ` : ''}
-                <button onclick="registrarRevisaoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition" title="Registrar revisão feita">
+                <button onclick="registrarRevisaoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
                   Revisado (${e.revisoes || 0}x)
                 </button>
-                <button onclick="toggleDominadoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold rounded-xl transition ${e.dominado ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'}">
-                  ${e.dominado ? 'Dominado ✓' : 'Marcar Dominado'}
+                <button onclick="toggleDominadoErro('${e.id}')" class="px-3 py-1.5 text-xs font-semibold rounded-xl transition ${superado ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'}">
+                  ${superado ? 'Superado ✓' : 'Marcar Superado'}
                 </button>
                 <button onclick="excluirErro('${e.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg" title="Excluir registro">
                   <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -1935,9 +2253,9 @@ E) R$ 11.576,25`;
               </div>
             </div>
 
-            <!-- ENUNCIADO E IMAGEM -->
+            <!-- ENUNCIADO -->
             <div class="text-sm text-slate-800 whitespace-pre-line bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
-              ${escapeHtml(e.enunciado)}
+              ${escapeHtml(e.statement)}
             </div>
 
             ${e.imagem ? `
@@ -1946,22 +2264,27 @@ E) R$ 11.576,25`;
               </div>
             ` : ''}
 
-            <!-- CAMPO ABERTO PARA BIZU / MOTIVO DO ERRO -->
-            <div class="pt-1">
-              <div class="flex items-center justify-between mb-1.5">
+            <!-- RESPOSTA CORRETA + CAMPO ABERTO PARA BIZU / MOTIVO DO ERRO -->
+            <div class="pt-1 space-y-2">
+              <div class="flex items-center justify-between">
                 <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i> Bizu / Motivo do Erro
+                  <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i> Gabarito / Bizu / Motivo do Erro (${escapeHtml(motivo.emoji)} ${escapeHtml(motivo.label)})
                 </label>
-                ${activeRecallAtivo && !semBizu ? `
-                  <button onclick="revelarBizuCard('${e.id}')" class="text-xs text-indigo-600 font-semibold hover:underline">Revelar Bizu</button>
+                ${activeRecallAtivo && (!semBizu || e.answer) ? `
+                  <button onclick="revelarBizuCard('${e.id}')" class="text-xs text-indigo-600 font-semibold hover:underline">Revelar Resposta & Bizu</button>
                 ` : ''}
               </div>
 
-              <div id="bizu-wrapper-${e.id}" class="${activeRecallAtivo && !semBizu ? 'blur-xs select-none opacity-60 hover:blur-none hover:opacity-100 transition' : ''}">
+              <div id="bizu-wrapper-${e.id}" class="space-y-2 ${activeRecallAtivo && (!semBizu || e.answer) ? 'blur-xs select-none opacity-60 hover:blur-none hover:opacity-100 transition' : ''}">
+                ${e.answer ? `
+                  <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
+                    <strong>Resposta Correta:</strong> ${escapeHtml(e.answer)}
+                  </div>
+                ` : ''}
                 <textarea id="bizu-input-${e.id}" rows="2"
                           placeholder="Escreva aqui por que você errou e qual o macete / regra para acertar na próxima..."
-                          class="w-full p-3 text-sm border ${semBizu ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 bg-white'} rounded-xl focus:border-indigo-500 focus:bg-white outline-none">${escapeHtml(e.bizu || '')}</textarea>
-                <div class="flex justify-end mt-1.5">
+                          class="w-full p-3 text-sm border ${semBizu ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 bg-white'} rounded-xl focus:border-indigo-500 focus:bg-white outline-none">${escapeHtml(e.notes || '')}</textarea>
+                <div class="flex justify-end">
                   <button onclick="salvarBizuErro('${e.id}')" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">
                     Salvar Bizu
                   </button>
@@ -1981,17 +2304,25 @@ E) R$ 11.576,25`;
     }
 
     function salvarBizuErro(id) {
-      const erro = estado.erros.find(e => e.id === id);
+      const erro = estado.errors.find(e => e.id === id);
       const input = document.getElementById(`bizu-input-${id}`);
       if (!erro || !input) return;
-      erro.bizu = input.value.trim();
+      erro.notes = input.value.trim();
       salvarEstado();
       renderCadernoErros();
       mostrarToast('Bizu salvo com sucesso!');
     }
 
+    function alterarMotivoErro(id, reasonId) {
+      const erro = estado.errors.find(e => e.id === id);
+      if (!erro) return;
+      erro.reasonId = reasonId;
+      salvarEstado();
+      renderCadernoErros();
+    }
+
     function registrarRevisaoErro(id) {
-      const erro = estado.erros.find(e => e.id === id);
+      const erro = estado.errors.find(e => e.id === id);
       if (!erro) return;
       erro.revisoes = (erro.revisoes || 0) + 1;
       salvarEstado();
@@ -2000,66 +2331,72 @@ E) R$ 11.576,25`;
     }
 
     function toggleDominadoErro(id) {
-      const erro = estado.erros.find(e => e.id === id);
+      const erro = estado.errors.find(e => e.id === id);
       if (!erro) return;
-      erro.dominado = !erro.dominado;
+      erro.status = erro.status === 'Superado' ? 'Pendente' : 'Superado';
       salvarEstado();
       renderCadernoErros();
     }
 
     function excluirErro(id) {
       if (!confirm('Remover este registro do Caderno de Erros?')) return;
-      estado.erros = estado.erros.filter(e => e.id !== id);
+      estado.errors = estado.errors.filter(e => e.id !== id);
       salvarEstado();
       renderCadernoErros();
     }
 
     function abrirModalNovoErroManual() {
       const selMat = document.getElementById('man-erro-materia');
-      selMat.innerHTML = estado.materias.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.nome)}</option>`).join('');
+      selMat.innerHTML = estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('');
       atualizarSubtopicosModalErro();
+
+      const selMot = document.getElementById('man-erro-motivo');
+      selMot.innerHTML = estado.errorReasons.map(r => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.emoji)} ${escapeHtml(r.label)}</option>`).join('');
+
       document.getElementById('modal-novo-erro').classList.remove('hidden');
     }
 
     function atualizarSubtopicosModalErro() {
-      const matId = document.getElementById('man-erro-materia').value;
-      const mat = estado.materias.find(m => m.id === matId);
+      const discId = document.getElementById('man-erro-materia').value;
+      const disc = getDisciplina(discId);
       const selSub = document.getElementById('man-erro-subtopico');
-      selSub.innerHTML = `<option value="Geral">Geral</option>` +
-        (mat ? mat.topicos : []).map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+      selSub.innerHTML = `<option value="">Geral</option>` +
+        (disc ? disc.topics : []).map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
     }
 
     function salvarErroManual() {
-      const matId = document.getElementById('man-erro-materia').value;
-      const mat = estado.materias.find(m => m.id === matId);
-      const assunto = document.getElementById('man-erro-subtopico').value || 'Geral';
+      const discId = document.getElementById('man-erro-materia').value;
+      const topicId = document.getElementById('man-erro-subtopico').value;
       const codigo = document.getElementById('man-erro-codigo').value.trim().toUpperCase();
+      const reasonId = document.getElementById('man-erro-motivo').value;
       const origem = document.getElementById('man-erro-origem').value.trim() || 'Registro Manual';
-      const enunciado = document.getElementById('man-erro-enunciado').value.trim();
-      const bizu = document.getElementById('man-erro-bizu').value.trim();
+      const statement = document.getElementById('man-erro-enunciado').value.trim();
+      const notes = document.getElementById('man-erro-bizu').value.trim();
 
-      if (!enunciado) {
+      if (!statement) {
         mostrarToast('Preencha o enunciado ou resumo da questão.', 'aviso');
         return;
       }
 
-      estado.erros.unshift({
+      estado.errors.unshift({
         id: gerarId('err'),
-        materiaId: matId,
-        materiaNome: mat ? mat.nome : 'Geral',
-        assunto,
+        disciplineId: discId,
+        topicId,
+        topicName: getNomeTopico(discId, topicId),
         codigo,
         link: gerarLinkQConcursos(codigo),
-        banca: '',
-        enunciado,
+        statement,
+        answer: '',
         imagem: '',
         observacao: '',
         origem,
         tipoRegistro: 'erro',
-        bizu,
+        reasonId,
+        relevance: 'Alta',
+        status: 'Pendente',
+        notes,
         revisoes: 0,
-        dominado: false,
-        dataCriacao: new Date().toISOString()
+        date: new Date().toISOString().slice(0, 10)
       });
 
       salvarEstado();
@@ -2073,31 +2410,43 @@ E) R$ 11.576,25`;
     }
 
     // =========================================================================
-    // MATÉRIAS E TÓPICOS
+    // MATÉRIAS E TÓPICOS DO EDITAL
     // =========================================================================
     function renderMaterias() {
       const grid = document.getElementById('grid-materias');
-      grid.innerHTML = estado.materias.map(m => `
+      grid.innerHTML = estado.disciplines.map(d => `
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-slate-900 text-base">${escapeHtml(m.nome)}</h3>
-            <button onclick="excluirMateria('${m.id}')" class="text-xs text-slate-400 hover:text-rose-600">Excluir</button>
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${escapeHtml(d.category)}</span>
+              <h3 class="font-bold text-slate-900 text-base mt-1 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${escapeHtml(d.color || '#4f46e5')}"></span>
+                ${escapeHtml(d.name)}
+              </h3>
+            </div>
+            <button onclick="excluirMateria('${d.id}')" class="text-xs text-slate-400 hover:text-rose-600">Excluir</button>
           </div>
 
-          <div class="flex flex-wrap gap-1.5">
-            ${m.topicos.map((t, tIdx) => `
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
-                ${escapeHtml(t)}
-                <button onclick="removerTopico('${m.id}', ${tIdx})" class="text-slate-400 hover:text-rose-600 font-bold">&times;</button>
-              </span>
+          <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+            ${d.topics.map((t, tIdx) => `
+              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                <div class="flex items-start justify-between gap-2">
+                  <span class="font-medium text-slate-800">${escapeHtml(t.name)}</span>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    ${t.questoes > 0 ? `<span class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold text-[10px]">${t.acertos}/${t.questoes}</span>` : ''}
+                    <button onclick="removerTopico('${d.id}', ${tIdx})" class="text-slate-400 hover:text-rose-600 font-bold" title="Remover tópico">&times;</button>
+                  </div>
+                </div>
+                ${t.notesHtml ? `<div class="notes-html text-slate-600 bg-white p-2 rounded-lg border border-slate-200/70">${t.notesHtml}</div>` : ''}
+              </div>
             `).join('')}
           </div>
 
           <div class="flex gap-2 pt-1">
-            <input type="text" id="input-topico-${m.id}" placeholder="Adicionar subtópico..."
-                   onkeydown="if(event.key==='Enter') adicionarTopico('${m.id}')"
+            <input type="text" id="input-topico-${d.id}" placeholder="Adicionar subtópico..."
+                   onkeydown="if(event.key==='Enter') adicionarTopico('${d.id}')"
                    class="flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-xl outline-none focus:border-indigo-500" />
-            <button onclick="adicionarTopico('${m.id}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl">
+            <button onclick="adicionarTopico('${d.id}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl">
               + Adicionar
             </button>
           </div>
@@ -2107,38 +2456,56 @@ E) R$ 11.576,25`;
 
     function adicionarMateria() {
       const input = document.getElementById('nova-materia-nome');
-      const nome = input.value.trim();
-      if (!nome) return;
-      estado.materias.push({ id: gerarId('mat'), nome, topicos: ['Geral'] });
+      const cat = document.getElementById('nova-materia-categoria').value;
+      const name = input.value.trim();
+      if (!name) return;
+      estado.disciplines.push({
+        id: gerarId('disc'),
+        name,
+        category: cat,
+        color: '#4f46e5',
+        expanded: false,
+        topics: [{ id: gerarId('top'), name: 'Geral', aula: false, revisao: false, questoes: 0, acertos: 0, lastStudy: '', tagColor: 'none', notesHtml: '' }]
+      });
       input.value = '';
       salvarEstado();
       renderMaterias();
-      mostrarToast(`Matéria "${nome}" adicionada!`);
+      mostrarToast(`Matéria "${name}" adicionada!`);
     }
 
     function excluirMateria(id) {
       if (!confirm('Remover esta matéria da lista?')) return;
-      estado.materias = estado.materias.filter(m => m.id !== id);
+      estado.disciplines = estado.disciplines.filter(d => d.id !== id);
       salvarEstado();
       renderMaterias();
     }
 
-    function adicionarTopico(matId) {
-      const input = document.getElementById(`input-topico-${matId}`);
+    function adicionarTopico(discId) {
+      const input = document.getElementById(`input-topico-${discId}`);
       const val = input.value.trim();
       if (!val) return;
-      const mat = estado.materias.find(m => m.id === matId);
-      if (mat && !mat.topicos.includes(val)) {
-        mat.topicos.push(val);
+      const disc = getDisciplina(discId);
+      if (disc && !disc.topics.some(t => t.name === val)) {
+        disc.topics.push({
+          id: gerarId('top'),
+          name: val,
+          aula: false,
+          revisao: false,
+          questoes: 0,
+          acertos: 0,
+          lastStudy: '',
+          tagColor: 'none',
+          notesHtml: ''
+        });
         salvarEstado();
         renderMaterias();
       }
     }
 
-    function removerTopico(matId, tIdx) {
-      const mat = estado.materias.find(m => m.id === matId);
-      if (mat) {
-        mat.topicos.splice(tIdx, 1);
+    function removerTopico(discId, tIdx) {
+      const disc = getDisciplina(discId);
+      if (disc) {
+        disc.topics.splice(tIdx, 1);
         salvarEstado();
         renderMaterias();
       }
@@ -2147,18 +2514,38 @@ E) R$ 11.576,25`;
     // =========================================================================
     // PAINEL GERAL, EVOLUÇÃO E HISTÓRICO
     // =========================================================================
+    function calcularEstatisticasDisciplina(disc) {
+      const sess = estado.sessions.filter(s => s.disciplineId === disc.id);
+      const qSess = sess.reduce((a, s) => a + (s.questionsCount || 0), 0);
+      const aSess = sess.reduce((a, s) => a + (s.correctCount || 0), 0);
+
+      const qTop = disc.topics.reduce((a, t) => a + (t.questoes || 0), 0);
+      const aTop = disc.topics.reduce((a, t) => a + (t.acertos || 0), 0);
+
+      // Usa o maior consolidado entre sessões e tópicos para não duplicar nem subestimar
+      const totalQ = Math.max(qSess, qTop);
+      const totalA = qSess >= qTop ? aSess : aTop;
+      return { totalQ, totalA };
+    }
+
     function renderPainel() {
-      const totalQuestoes = estado.rodadas.reduce((acc, r) => acc + (r.totalQuestoes || 0), 0);
-      const totalAcertos = estado.rodadas.reduce((acc, r) => acc + (r.acertos || 0), 0);
+      let totalQuestoes = 0;
+      let totalAcertos = 0;
+      estado.disciplines.forEach(d => {
+        const st = calcularEstatisticasDisciplina(d);
+        totalQuestoes += st.totalQ;
+        totalAcertos += st.totalA;
+      });
+
       const mediaAcerto = totalQuestoes > 0 ? Math.round((totalAcertos / totalQuestoes) * 100) : 0;
-      const errosAtivos = estado.erros.filter(e => !e.dominado).length;
-      const rodadasConcluidas = estado.rodadas.length;
+      const errosAtivos = estado.errors.filter(e => e.status !== 'Superado').length;
+      const sessoesConcluidas = estado.sessions.length;
 
       document.getElementById('painel-kpis').innerHTML = `
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <span class="text-xs font-semibold text-slate-500 uppercase">Questões Resolvidas</span>
           <div class="text-2xl font-extrabold text-slate-900 mt-1">${totalQuestoes}</div>
-          <span class="text-xs text-slate-400">${rodadasConcluidas} rodada(s) concluída(s)</span>
+          <span class="text-xs text-slate-400">${sessoesConcluidas} sessão(ões) / rodada(s)</span>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <span class="text-xs font-semibold text-slate-500 uppercase">Aproveitamento Geral</span>
@@ -2168,7 +2555,7 @@ E) R$ 11.576,25`;
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <span class="text-xs font-semibold text-slate-500 uppercase">Caderno de Erros Ativo</span>
           <div class="text-2xl font-extrabold text-rose-600 mt-1">${errosAtivos}</div>
-          <span class="text-xs text-slate-400">Questões para revisar</span>
+          <span class="text-xs text-slate-400">Questões pendentes de revisão</span>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <span class="text-xs font-semibold text-slate-500 uppercase">Rodadas em Andamento</span>
@@ -2177,19 +2564,16 @@ E) R$ 11.576,25`;
         </div>
       `;
 
-      // Desempenho por matéria
       const listaMat = document.getElementById('painel-materias-lista');
-      listaMat.innerHTML = estado.materias.map(m => {
-        const rods = estado.rodadas.filter(r => r.materiaId === m.id);
-        const qTot = rods.reduce((a, r) => a + r.totalQuestoes, 0);
-        const qAc = rods.reduce((a, r) => a + r.acertos, 0);
-        const pct = qTot > 0 ? Math.round((qAc / qTot) * 100) : 0;
+      listaMat.innerHTML = estado.disciplines.map(d => {
+        const { totalQ, totalA } = calcularEstatisticasDisciplina(d);
+        const pct = totalQ > 0 ? Math.round((totalA / totalQ) * 100) : 0;
 
         return `
           <div class="space-y-1">
             <div class="flex justify-between text-xs font-semibold">
-              <span class="text-slate-700">${escapeHtml(m.nome)}</span>
-              <span class="text-slate-500">${qTot > 0 ? `${pct}% (${qAc}/${qTot})` : 'Sem rodadas ainda'}</span>
+              <span class="text-slate-700">${escapeHtml(d.name)}</span>
+              <span class="text-slate-500">${totalQ > 0 ? `${pct}% (${totalA}/${totalQ})` : 'Sem questões ainda'}</span>
             </div>
             <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
               <div class="h-full ${pct >= 75 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-indigo-500'}" style="width: ${pct}%"></div>
@@ -2198,10 +2582,9 @@ E) R$ 11.576,25`;
         `;
       }).join('');
 
-      // Pendências prioritárias
       const pend = document.getElementById('painel-pendencias');
       const emAndamento = estado.rodadasGuiadas.filter(r => r.status === 'em_andamento');
-      const semBizu = estado.erros.filter(e => !e.dominado && (!e.bizu || !e.bizu.trim()));
+      const semBizu = estado.errors.filter(e => e.status !== 'Superado' && (!e.notes || !e.notes.trim()));
 
       let htmlPend = '';
       if (emAndamento.length) {
@@ -2234,14 +2617,18 @@ E) R$ 11.576,25`;
       if (chartEvolucaoRodadas) chartEvolucaoRodadas.destroy();
       if (chartEvolucaoMaterias) chartEvolucaoMaterias.destroy();
 
-      const ultimas = [...estado.rodadas].reverse().slice(-12);
+      const ultimas = [...estado.sessions].reverse().slice(-12);
       chartEvolucaoRodadas = new Chart(ctxRod, {
         type: 'line',
         data: {
-          labels: ultimas.length ? ultimas.map(r => r.titulo.slice(0, 18)) : ['Sem dados'],
+          labels: ultimas.length
+            ? ultimas.map(s => (s.roundName || getNomeDisciplina(s.disciplineId)).slice(0, 20))
+            : ['Sem dados'],
           datasets: [{
             label: '% de Acertos',
-            data: ultimas.length ? ultimas.map(r => r.percentual) : [0],
+            data: ultimas.length
+              ? ultimas.map(s => s.questionsCount > 0 ? Math.round((s.correctCount / s.questionsCount) * 100) : 0)
+              : [0],
             borderColor: '#4f46e5',
             backgroundColor: 'rgba(79, 70, 229, 0.12)',
             fill: true,
@@ -2255,12 +2642,10 @@ E) R$ 11.576,25`;
         }
       });
 
-      const labelsMat = estado.materias.map(m => m.nome);
-      const dadosMat = estado.materias.map(m => {
-        const rods = estado.rodadas.filter(r => r.materiaId === m.id);
-        const tot = rods.reduce((a, r) => a + r.totalQuestoes, 0);
-        const ac = rods.reduce((a, r) => a + r.acertos, 0);
-        return tot > 0 ? Math.round((ac / tot) * 100) : 0;
+      const labelsMat = estado.disciplines.map(d => d.name.length > 22 ? d.name.slice(0, 22) + '…' : d.name);
+      const dadosMat = estado.disciplines.map(d => {
+        const { totalQ, totalA } = calcularEstatisticasDisciplina(d);
+        return totalQ > 0 ? Math.round((totalA / totalQ) * 100) : 0;
       });
 
       chartEvolucaoMaterias = new Chart(ctxMat, {
@@ -2284,36 +2669,42 @@ E) R$ 11.576,25`;
 
     function renderHistorico() {
       const tbody = document.getElementById('tabela-historico-body');
-      if (!estado.rodadas.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-sm text-slate-400">Nenhuma rodada finalizada no histórico ainda.</td></tr>`;
+      if (!estado.sessions.length) {
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-sm text-slate-400">Nenhuma sessão ou rodada no histórico ainda.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = estado.rodadas.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="py-3 px-4 text-xs text-slate-500">${new Date(r.data).toLocaleDateString('pt-BR')}</td>
-          <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(r.titulo)}</td>
-          <td class="py-3 px-4 text-xs text-slate-600">${escapeHtml(r.materiaNome)}</td>
-          <td class="py-3 px-4 text-center font-medium">${r.totalQuestoes}</td>
-          <td class="py-3 px-4 text-center font-semibold text-emerald-600">${r.acertos}</td>
-          <td class="py-3 px-4 text-center font-semibold text-amber-600">${r.duvidas || 0}</td>
-          <td class="py-3 px-4 text-center font-semibold text-rose-600">${r.erros}</td>
-          <td class="py-3 px-4 text-center">
-            <span class="px-2.5 py-0.5 text-xs font-bold rounded-full ${r.percentual >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'}">
-              ${r.percentual}%
-            </span>
-          </td>
-          <td class="py-3 px-4 text-right">
-            ${r.rodadaGuiadaId ? `
-              <button onclick="abrirModoPapelCaneta('${r.rodadaGuiadaId}')" class="text-xs text-indigo-600 hover:underline font-semibold">Abrir</button>
-            ` : '-'}
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = estado.sessions.map(s => {
+        const pct = s.questionsCount > 0 ? Math.round((s.correctCount / s.questionsCount) * 100) : 0;
+        const titulo = s.roundName || getNomeTopico(s.disciplineId, s.topicId);
+        const temRodadaGuiada = s.roundId && estado.rodadasGuiadas.some(r => r.id === s.roundId);
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 text-xs text-slate-500">${escapeHtml(s.date)}</td>
+            <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(titulo)}</td>
+            <td class="py-3 px-4 text-xs text-slate-600">${escapeHtml(getNomeDisciplina(s.disciplineId))}</td>
+            <td class="py-3 px-4 text-center font-medium">${s.questionsCount}</td>
+            <td class="py-3 px-4 text-center font-semibold text-emerald-600">${s.correctCount}</td>
+            <td class="py-3 px-4 text-center font-semibold text-amber-600">${s.duvidasCount || 0}</td>
+            <td class="py-3 px-4 text-center font-semibold text-rose-600">${s.errosCount}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full ${pct >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'}">
+                ${pct}%
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right">
+              ${temRodadaGuiada ? `
+                <button onclick="abrirModoPapelCaneta('${s.roundId}')" class="text-xs text-indigo-600 hover:underline font-semibold">Abrir</button>
+              ` : '-'}
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     // =========================================================================
-    // BACKUP JSON
+    // BACKUP JSON (EXPORTAÇÃO E IMPORTAÇÃO 100% COMPATÍVEL)
     // =========================================================================
     function exportarBackupJSON() {
       const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
@@ -2333,15 +2724,10 @@ E) R$ 11.576,25`;
       reader.onload = (e) => {
         try {
           const parsed = JSON.parse(e.target.result);
-          estado = {
-            materias: parsed.materias || ESTADO_PADRAO.materias,
-            rodadasGuiadas: parsed.rodadasGuiadas || [],
-            rodadas: parsed.rodadas || [],
-            erros: parsed.erros || []
-          };
+          estado = normalizarEstado(parsed);
           salvarEstado();
           navegar('painel');
-          mostrarToast('Backup restaurado com sucesso!');
+          mostrarToast(`Backup restaurado! ${estado.disciplines.length} matérias, ${estado.errors.length} erros e ${estado.sessions.length} sessões carregadas.`);
         } catch (err) {
           mostrarToast('Arquivo JSON inválido.', 'erro');
         }
