@@ -1126,15 +1126,31 @@
 
         todasLinhasConteudo.push(...bloco.linhas);
 
+        // Quebra alternativas que vieram na mesma linha (ex: (A) 10,25% (B) 20,5% (C) 10%...)
+        const linhasExpandidas = [];
+        todasLinhasConteudo.forEach(linhaBruta => {
+          const temSequenciaInline = /^(?:\([A-D]\)|[A-D][).\-–—:])\s*.*(?:\([B-E]\)|\s[B-E][).\-–—:])/i.test(linhaBruta.trim());
+          if (temSequenciaInline) {
+            const quebrada = linhaBruta
+              .replace(/(^|\s)(\([A-E]\)|[A-E][).\-–—:])/gi, '\n$2')
+              .split('\n')
+              .map(s => s.trim())
+              .filter(Boolean);
+            linhasExpandidas.push(...quebrada);
+          } else {
+            linhasExpandidas.push(linhaBruta);
+          }
+        });
+
         const linhasEnunciado = [];
         const alternativas = [];
         let altAtual = null;
 
-        const regexAltInline = /^\(?([A-E])\)?\s*(?:[).\-–—:]|\s{1,4})\s*(.+)$/i;
+        const regexAltInline = /^(?:\(([A-E])\)|([A-E])[).\-–—:])\s*(.+)$/i;
         const regexAltLetraSozinha = /^\(?([A-E])\)?[).\-–—:]?\s*$/i;
 
-        for (let j = 0; j < todasLinhasConteudo.length; j++) {
-          const lTrim = todasLinhasConteudo[j].trim();
+        for (let j = 0; j < linhasExpandidas.length; j++) {
+          const lTrim = linhasExpandidas[j].trim();
           if (!lTrim) {
             if (!altAtual && linhasEnunciado.length > 0) linhasEnunciado.push('');
             continue;
@@ -1143,7 +1159,7 @@
           const mSozinha = lTrim.match(regexAltLetraSozinha);
           const mInline = !mSozinha ? lTrim.match(regexAltInline) : null;
 
-          const letraCandidata = (mSozinha ? mSozinha[1] : mInline ? mInline[1] : '').toUpperCase();
+          const letraCandidata = (mSozinha ? mSozinha[1] : mInline ? (mInline[1] || mInline[2]) : '').toUpperCase();
           const idxEsperado = 'ABCDE'.indexOf(letraCandidata);
           const ordemValida = letraCandidata && (
             (alternativas.length === 0 && idxEsperado === 0) ||
@@ -1155,7 +1171,7 @@
             altAtual = { letra: letraCandidata, texto: '' };
           } else if (ordemValida && mInline) {
             if (altAtual) alternativas.push(altAtual);
-            altAtual = { letra: letraCandidata, texto: mInline[2].trim() };
+            altAtual = { letra: letraCandidata, texto: mInline[3].trim() };
           } else if (altAtual) {
             altAtual.texto = altAtual.texto ? `${altAtual.texto} ${lTrim}` : lTrim;
           } else {
