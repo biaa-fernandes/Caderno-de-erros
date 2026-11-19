@@ -32,6 +32,9 @@
     .notes-html table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.75rem; }
     .notes-html th, .notes-html td { border: 1px solid #cbd5e1; padding: 0.35rem 0.5rem; text-align: left; }
     .notes-html th { background-color: #f1f5f9; font-weight: 600; }
+    .bizu-editor b, .bizu-editor strong { font-weight: 700 !important; }
+ .bizu-editor i, .bizu-editor em { font-style: italic !important; }
+ .bizu-editor u { text-decoration: underline !important; }
     .bizu-editor:empty::before {
       content: attr(data-placeholder);
       color: #94a3b8;
@@ -2342,12 +2345,29 @@ E) R$ 11.576,25`;
     function formatarBizu(id, comando, valor = null) {
       const editor = document.getElementById(`bizu-editor-${id}`);
       if (!editor) return;
-      editor.focus();
+
+      if (document.activeElement !== editor) {
+        editor.focus();
+      }
+
+      try {
+        document.execCommand('styleWithCSS', false, true);
+      } catch (err) {}
 
       if (comando === 'limpar') {
         document.execCommand('removeFormat', false, null);
-        document.execCommand('hiliteColor', false, 'transparent');
-        document.execCommand('foreColor', false, '#0f172a');
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+          document.execCommand('insertText', false, sel.toString());
+        }
+        return;
+      }
+
+      if (comando === 'hiliteColor') {
+        const aplicou = document.execCommand('hiliteColor', false, valor);
+        if (!aplicou) {
+          document.execCommand('backColor', false, valor);
+        }
         return;
       }
 
