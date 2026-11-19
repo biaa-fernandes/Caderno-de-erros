@@ -77,15 +77,19 @@
       min-height: 240px;
       outline: none;
     }
-    .rich-editor ul {
+    .rich-editor ul,
+    .error-note-editor ul,
+    .error-note-rendered ul {
       list-style-type: disc;
       padding-left: 1.5rem;
-      margin: 0.5rem 0;
+      margin: 0.35rem 0;
     }
-    .rich-editor ol {
+    .rich-editor ol,
+    .error-note-editor ol,
+    .error-note-rendered ol {
       list-style-type: decimal;
       padding-left: 1.5rem;
-      margin: 0.5rem 0;
+      margin: 0.35rem 0;
     }
     .rich-editor table {
       width: 100%;
@@ -102,6 +106,30 @@
     .rich-editor th {
       background-color: rgba(99, 102, 241, 0.12);
       font-weight: 600;
+    }
+
+    /* Error Notes Rich Editor */
+    .error-note-editor {
+      min-height: 115px;
+      outline: none;
+    }
+    .error-note-editor:empty:before {
+      content: attr(data-placeholder);
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    /* High contrast text for highlighter colors in both Light and Dark themes */
+    .error-note-editor [style*="254, 240, 138"],
+    .error-note-editor [style*="187, 247, 208"],
+    .error-note-editor [style*="251, 207, 232"],
+    .error-note-editor [style*="186, 230, 253"],
+    .error-note-rendered [style*="254, 240, 138"],
+    .error-note-rendered [style*="187, 247, 208"],
+    .error-note-rendered [style*="251, 207, 232"],
+    .error-note-rendered [style*="186, 230, 253"] {
+      color: #0f172a !important;
+      padding: 1px 4px;
+      border-radius: 4px;
     }
 
     /* Circular SVG Gauge Transition */
@@ -524,10 +552,28 @@
                 </div>
               </div>
 
-              <!-- Row 5: Detailed Error Notes -->
+              <!-- Row 5: Detailed Error Notes (Rich Text with Bold, Italic, Underline & Highlighter) -->
               <div>
                 <label class="block text-xs font-semibold mb-1.5">Notas de Erro (Por que errei e o que revisar?) *</label>
-                <textarea id="err-notes" rows="4" required placeholder="Explique o raciocínio errado que você teve, a pegadinha da banca e a regra/conceito correto para não errar novamente..." class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <div class="rounded-xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-surface overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                  <!-- Formatting Toolbar -->
+                  <div class="px-3 py-2 border-b border-slate-200 dark:border-dark-border bg-white/60 dark:bg-dark-card/60 flex flex-wrap items-center gap-1.5">
+                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('bold')" title="Negrito (Ctrl+B)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover font-bold text-xs transition">B</button>
+                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('italic')" title="Itálico (Ctrl+I)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover italic text-xs transition">I</button>
+                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('underline')" title="Sublinhado (Ctrl+U)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover underline text-xs transition">U</button>
+                    <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
+                    <span class="text-[11px] text-slate-400 mr-0.5">Marca-texto:</span>
+                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#fef08a')" title="Marca-texto Amarelo" class="w-5 h-5 rounded-full bg-[#fef08a] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#bbf7d0')" title="Marca-texto Verde" class="w-5 h-5 rounded-full bg-[#bbf7d0] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#fbcfe8')" title="Marca-texto Rosa" class="w-5 h-5 rounded-full bg-[#fbcfe8] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#bae6fd')" title="Marca-texto Azul" class="w-5 h-5 rounded-full bg-[#bae6fd] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('transparent')" title="Remover marca-texto" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-[11px] text-slate-500 transition">✕</button>
+                    <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
+                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('insertUnorderedList')" title="Lista com marcadores" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-xs transition">• Lista</button>
+                  </div>
+                  <!-- Editable Area -->
+                  <div id="err-notes" contenteditable="true" data-placeholder="Explique o raciocínio errado que você teve, a pegadinha da banca e a regra/conceito correto para não errar novamente..." class="error-note-editor w-full px-3.5 py-2.5 text-sm leading-relaxed"></div>
+                </div>
               </div>
 
               <!-- Submit Actions -->
@@ -1898,7 +1944,7 @@
     }
 
     // =========================================================================
-    // 2. MATÉRIAS E TÓPICOS (CONTEÚDO PROGRAMÁTICO)
+    // 2. MATÉRIAS E TÓPICOS (CONTEÚDO PROGRAMÁTICO & REORDENAÇÃO)
     // =========================================================================
     function expandAllDisciplines(expand) {
       appState.disciplines.forEach((d) => (d.expanded = expand));
@@ -1913,6 +1959,30 @@
         saveState();
         renderSyllabus();
       }
+    }
+
+    function moveDiscipline(discId, direction) {
+      const idx = appState.disciplines.findIndex((d) => d.id === discId);
+      if (idx === -1) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= appState.disciplines.length) return;
+      const [moved] = appState.disciplines.splice(idx, 1);
+      appState.disciplines.splice(targetIdx, 0, moved);
+      saveState();
+      renderSyllabus();
+    }
+
+    function moveTopic(discId, topId, direction) {
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      if (!disc) return;
+      const idx = disc.topics.findIndex((t) => t.id === topId);
+      if (idx === -1) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= disc.topics.length) return;
+      const [moved] = disc.topics.splice(idx, 1);
+      disc.topics.splice(targetIdx, 0, moved);
+      saveState();
+      renderSyllabus();
     }
 
     function renderSyllabus() {
@@ -1936,6 +2006,7 @@
 
       container.innerHTML = filteredDisciplines
         .map((disc) => {
+          const realDiscIdx = appState.disciplines.findIndex((d) => d.id === disc.id);
           const totalQ = disc.topics.reduce((a, t) => a + (t.questoes || 0), 0);
           const totalA = disc.topics.reduce((a, t) => a + (t.acertos || 0), 0);
           const avgPct = totalQ > 0 ? Math.round((totalA / totalQ) * 100) : 0;
@@ -1943,6 +2014,7 @@
 
           const rowsHtml = disc.visibleTopics
             .map((top) => {
+              const realTopIdx = disc.topics.findIndex((t) => t.id === top.id);
               const erros = Math.max(0, (top.questoes || 0) - (top.acertos || 0));
               const pct = top.questoes > 0 ? Math.round((top.acertos / top.questoes) * 100) : null;
 
@@ -2007,6 +2079,12 @@
                   </td>
                   <td class="py-2.5 px-3 text-right whitespace-nowrap">
                     <div class="inline-flex items-center gap-1">
+                      <button type="button" onclick="moveTopic('${disc.id}', '${top.id}', -1)" ${realTopIdx === 0 || query.length > 0 ? 'disabled' : ''} title="Subir tópico" class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-400 disabled:opacity-30 disabled:pointer-events-none transition">
+                        <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button type="button" onclick="moveTopic('${disc.id}', '${top.id}', 1)" ${realTopIdx === disc.topics.length - 1 || query.length > 0 ? 'disabled' : ''} title="Descer tópico" class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-400 disabled:opacity-30 disabled:pointer-events-none transition">
+                        <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
+                      </button>
                       <button onclick="quickLogTopicQuestion('${disc.id}', '${top.id}', true)" title="+1 Acerto" class="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 text-xs font-bold">+✓</button>
                       <button onclick="quickLogTopicQuestion('${disc.id}', '${top.id}', false)" title="+1 Erro" class="px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 text-xs font-bold">+✕</button>
                       <button onclick="openNotesDrawer('${disc.id}', '${top.id}')" title="Resumo / Observações" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-indigo-500">
@@ -2041,6 +2119,15 @@
                 </div>
 
                 <div class="flex items-center gap-1.5">
+                  <div class="inline-flex items-center rounded-xl bg-slate-100 dark:bg-dark-card border border-slate-200/80 dark:border-dark-border p-0.5 mr-1">
+                    <button type="button" onclick="moveDiscipline('${disc.id}', -1)" ${realDiscIdx === 0 || query.length > 0 ? 'disabled' : ''} title="Mover disciplina para cima" class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-500 disabled:opacity-30 disabled:pointer-events-none transition">
+                      <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="moveDiscipline('${disc.id}', 1)" ${realDiscIdx === appState.disciplines.length - 1 || query.length > 0 ? 'disabled' : ''} title="Mover disciplina para baixo" class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-500 disabled:opacity-30 disabled:pointer-events-none transition">
+                      <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+
                   <button onclick="openTopicModal('${disc.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-500 transition">
                     + Tópico
                   </button>
@@ -2323,8 +2410,41 @@
     }
 
     // =========================================================================
-    // 3A. REGISTRAR ERRO (FORM & EDITING)
+    // 3A. REGISTRAR ERRO (FORM, RICH NOTES & EDITING)
     // =========================================================================
+    function execErrorNoteCmd(command, value = null) {
+      const editor = document.getElementById('err-notes');
+      editor.focus();
+      document.execCommand(command, false, value);
+    }
+
+    function applyNoteHighlight(color) {
+      const editor = document.getElementById('err-notes');
+      editor.focus();
+      if (color === 'transparent') {
+        document.execCommand('hiliteColor', false, 'transparent');
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+          const container = sel.getRangeAt(0).commonAncestorContainer;
+          const parentEl = container.nodeType === 1 ? container : container.parentElement;
+          if (parentEl && editor.contains(parentEl)) {
+            parentEl.querySelectorAll('[style*="background-color"]').forEach((el) => {
+              if (sel.containsNode(el, true)) {
+                el.style.backgroundColor = '';
+                if (!el.getAttribute('style')) el.removeAttribute('style');
+              }
+            });
+            if (parentEl !== editor && parentEl.style && parentEl.style.backgroundColor) {
+              parentEl.style.backgroundColor = '';
+              if (!parentEl.getAttribute('style')) parentEl.removeAttribute('style');
+            }
+          }
+        }
+      } else {
+        document.execCommand('hiliteColor', false, color);
+      }
+    }
+
     function prepareRegisterErrorView(editErrorId = null) {
       const discSelect = document.getElementById('err-discipline');
       discSelect.innerHTML = appState.disciplines
@@ -2354,7 +2474,7 @@
         document.getElementById('err-reason').value = err.reasonId;
         document.getElementById('err-relevance').value = err.relevance;
         document.getElementById('err-status').value = err.status;
-        document.getElementById('err-notes').value = err.notes;
+        document.getElementById('err-notes').innerHTML = err.notes || '';
       } else if (!document.getElementById('err-id').value) {
         document.getElementById('error-form-title').innerHTML = `<i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i><span>Registrar Nova Questão Errada</span>`;
         document.getElementById('error-form-submit-text').textContent = 'Salvar no Caderno de Erros';
@@ -2381,6 +2501,7 @@
     function resetErrorForm() {
       document.getElementById('error-form').reset();
       document.getElementById('err-id').value = '';
+      document.getElementById('err-notes').innerHTML = '';
       document.getElementById('err-date').value = getLocalDateStr(0);
       document.getElementById('error-form-title').innerHTML = `<i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i><span>Registrar Nova Questão Errada</span>`;
       document.getElementById('error-form-submit-text').textContent = 'Salvar no Caderno de Erros';
@@ -2391,6 +2512,13 @@
 
     function handleSaveError(e) {
       e.preventDefault();
+      const notesEl = document.getElementById('err-notes');
+      if (notesEl.textContent.trim().length === 0) {
+        showToast('Preencha as notas de erro antes de salvar.', 'error');
+        notesEl.focus();
+        return;
+      }
+
       const existingId = document.getElementById('err-id').value;
       const disciplineId = document.getElementById('err-discipline').value;
       const topicId = document.getElementById('err-topic').value;
@@ -2401,7 +2529,7 @@
       const reasonId = document.getElementById('err-reason').value;
       const relevance = document.getElementById('err-relevance').value;
       const status = document.getElementById('err-status').value;
-      const notes = document.getElementById('err-notes').value.trim();
+      const notes = notesEl.innerHTML.trim();
 
       if (existingId) {
         const idx = appState.errors.findIndex((item) => item.id === existingId);
@@ -2488,7 +2616,8 @@
         if (query) {
           const disc = appState.disciplines.find((d) => d.id === err.disciplineId);
           const top = disc?.topics.find((t) => t.id === err.topicId);
-          const haystack = `${err.statement} ${err.answer} ${err.notes} ${disc?.name || ''} ${top?.name || ''}`.toLowerCase();
+          const plainNotes = (err.notes || '').replace(/<[^>]*>/g, ' ');
+          const haystack = `${err.statement} ${err.answer} ${plainNotes} ${disc?.name || ''} ${top?.name || ''}`.toLowerCase();
           if (!haystack.includes(query)) return false;
         }
         return true;
@@ -2572,8 +2701,9 @@
                   <div class="px-3 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold">
                     Gabarito: ${err.answer}
                   </div>
-                  <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    <strong class="text-slate-800 dark:text-slate-100">Por que errei / O que revisar:</strong> ${err.notes}
+                  <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed error-note-rendered">
+                    <strong class="text-slate-800 dark:text-slate-100 block mb-1">Por que errei / O que revisar:</strong>
+                    <div class="space-y-1">${err.notes || ''}</div>
                   </div>
                 </div>
 
