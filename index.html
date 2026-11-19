@@ -1037,7 +1037,10 @@
     }
 
     function parseTextoRodada(rawText, disciplineId, topicIdPadrao) {
-      const textoNormalizado = rawText.replace(/\r\n/g, '\n').trim();
+      const textoNormalizado = rawText
+        .replace(/\r\n|\r|\u2028|\u2029/g, '\n')
+        .replace(/\u00A0/g, ' ')
+        .trim();
       if (!textoNormalizado) return [];
 
       const linhas = textoNormalizado.split('\n');
@@ -1062,7 +1065,7 @@
             ehNovaQuestao = true;
           } else if (temCodigoOuBanca) {
             ehNovaQuestao = true;
-          } else if (numDetectado === blocoAtual.numero + 1 && blocoAtual.linhas.some(l => /^\(?[A-E]\)?[).\-–—:]?\s*/i.test(l.trim()))) {
+          } else if (numDetectado === blocoAtual.numero + 1 && blocoAtual.linhas.some(l => /^\(?[A-E]\)?[).\-–—:]?\s*/.test(l.trim()))) {
             ehNovaQuestao = true;
           }
         }
@@ -1126,17 +1129,16 @@
 
         todasLinhasConteudo.push(...bloco.linhas);
 
-        // Quebra alternativas na mesma linha (mesmo coladas ao enunciado ou sem espaço entre elas)
+        // Separa alternativas que vieram na mesma linha (ex: (A) 9,0% (B) 9,6% (C) 10,0%...)
         const linhasExpandidas = [];
-        todasLinhasConteudo.forEach(linhaOriginal => {
-          const linhaBruta = linhaOriginal.replace(/\u00A0/g, ' ');
-          const temParentesesInline = /\(\s*A\s*\)\s*[^(\n]+?\(\s*B\s*\)/i.test(linhaBruta);
-          const temLetraPontoInline = /(?:^|\s)A[).\-–—:]\s*\S+.*\sB[).\-–—:](?:\s|$)/i.test(linhaBruta);
+        todasLinhasConteudo.forEach(linhaBruta => {
+          const temParentesesInline = /\(\s*A\s*\)\s*[^(\n]+?\(\s*B\s*\)/.test(linhaBruta);
+          const temLetraPontoInline = /(?:^|\s)A[).\-–—:]\s*\S+.*\sB[).\-–—:](?:\s|$)/.test(linhaBruta);
 
           if (temParentesesInline || temLetraPontoInline) {
             const textoQuebrado = temParentesesInline
-              ? linhaBruta.replace(/(\(\s*[A-E]\s*\))/gi, '\n$1')
-              : linhaBruta.replace(/(^|\s)([A-E][).\-–—:])(?=\s|$)/gi, '\n$2');
+              ? linhaBruta.replace(/(\(\s*[A-E]\s*\))/g, '\n$1')
+              : linhaBruta.replace(/(^|\s)([A-E][).\-–—:])(?=\s|$)/g, '\n$2');
             const partes = textoQuebrado
               .split('\n')
               .map(s => s.trim())
@@ -1151,8 +1153,8 @@
         const alternativas = [];
         let altAtual = null;
 
-        const regexAltInline = /^(?:\(([A-E])\)|([A-E])[).\-–—:])\s*(.+)$/i;
-        const regexAltLetraSozinha = /^\(?([A-E])\)?[).\-–—:]?\s*$/i;
+        const regexAltComParenteses = /^\(\s*([A-E])\s*\)\s*(.*)$/;
+        const regexAltSemParenteses = /^([A-E])\s*(?:[).\-–—:]\s*(.*)|())$/;
 
         for (let j = 0; j < linhasExpandidas.length; j++) {
           const lTrim = linhasExpandidas[j].trim();
@@ -1161,22 +1163,19 @@
             continue;
           }
 
-          const mSozinha = lTrim.match(regexAltLetraSozinha);
-          const mInline = !mSozinha ? lTrim.match(regexAltInline) : null;
+          const mPar = lTrim.match(regexAltComParenteses);
+          const mSemPar = !mPar ? lTrim.match(regexAltSemParenteses) : null;
 
-          const letraCandidata = (mSozinha ? mSozinha[1] : mInline ? (mInline[1] || mInline[2]) : '').toUpperCase();
+          const letraCandidata = mPar ? mPar[1] : mSemPar ? mSemPar[1] : '';
+          const textoCandidato = mPar ? (mPar[2] || '').trim() : mSemPar ? (mSemPar[2] || '').trim() : '';
+
+          const qtdIniciadas = alternativas.length + (altAtual ? 1 : 0);
           const idxEsperado = 'ABCDE'.indexOf(letraCandidata);
-          const ordemValida = letraCandidata && (
-            (alternativas.length === 0 && idxEsperado === 0) ||
-            (alternativas.length > 0 && idxEsperado === alternativas.length)
-          );
+          const ordemValida = letraCandidata !== '' && idxEsperado === qtdIniciadas;
 
-          if (ordemValida && mSozinha) {
+          if (ordemValida) {
             if (altAtual) alternativas.push(altAtual);
-            altAtual = { letra: letraCandidata, texto: '' };
-          } else if (ordemValida && mInline) {
-            if (altAtual) alternativas.push(altAtual);
-            altAtual = { letra: letraCandidata, texto: mInline[3].trim() };
+            altAtual = { letra: letraCandidata, texto: textoCandidato };
           } else if (altAtual) {
             altAtual.texto = altAtual.texto ? `${altAtual.texto} ${lTrim}` : lTrim;
           } else {
@@ -1206,7 +1205,6 @@
         };
       });
     }
-
     // =========================================================================
     // CONTROLE DO SUB-MÓDULO DE IMPORTAÇÃO EM LOTE
     // =========================================================================
