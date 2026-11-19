@@ -177,6 +177,14 @@
           <span>Matérias e Tópicos</span>
         </button>
 
+        <button onclick="switchView('rounds')" data-nav="rounds" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <div class="flex items-center gap-3">
+            <i data-lucide="list-checks" class="w-4 h-4 shrink-0 text-indigo-500"></i>
+            <span>Rodadas de Questões</span>
+          </div>
+          <span id="sidebar-rounds-badge" class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-500 font-semibold">0</span>
+        </button>
+
         <div class="pt-3 pb-1 px-3.5">
           <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Caderno de Erros</span>
         </div>
@@ -328,10 +336,16 @@
                   <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                     "O superpoder de fazer um pouco todos os dias."
                   </p>
-                  <button onclick="switchView('register-error')" class="mt-3 w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    Registrar Erro Agora
-                  </button>
+                  <div class="mt-3 w-full space-y-1.5">
+                    <button onclick="switchView('rounds'); openRoundModal();" class="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                      <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
+                      Nova Rodada de Questões
+                    </button>
+                    <button onclick="switchView('register-error')" class="w-full py-1.5 px-3 rounded-xl bg-slate-200/70 dark:bg-dark-card hover:bg-slate-200 dark:hover:bg-dark-hover text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                      Registrar Erro Avulso
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -463,7 +477,54 @@
         </section>
 
         <!-- ========================================================= -->
-        <!-- 3A. REGISTRAR ERRO (FORMULÁRIO COMPLETO)                  -->
+        <!-- 2B. RODADAS DE QUESTÕES (CONECTADAS AO CADERNO DE ERROS)  -->
+        <!-- ========================================================= -->
+        <section id="view-rounds" class="view-section hidden space-y-5">
+          <!-- Header & Filter Bar -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 class="font-bold text-base flex items-center gap-2">
+                  <i data-lucide="list-checks" class="w-5 h-5 text-indigo-500"></i>
+                  <span>Minhas Rodadas de Questões</span>
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Armazene suas baterias de exercícios, acompanhe o percentual de acerto e envie qualquer erro direto para o Caderno de Erros.
+                </p>
+              </div>
+              <button onclick="openRoundModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 flex items-center justify-center gap-2 shrink-0 transition">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>+ Nova Rodada de Questões</span>
+              </button>
+            </div>
+
+            <!-- Search & Discipline Filter -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
+              <div class="md:col-span-7 relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input id="rounds-search" type="text" oninput="renderRounds()" placeholder="Buscar rodada por nome, assunto trabalhado ou fonte (QConcursos, provas...)..." class="w-full pl-10 pr-4 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div class="md:col-span-5">
+                <select id="rounds-filter-discipline" onchange="renderRounds()" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="all">Todas as Disciplinas</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Quick Rounds Summary Strip -->
+            <div id="rounds-summary-strip" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- Rounds Cards Container -->
+          <div id="rounds-list" class="space-y-4">
+            <!-- Populated via JS -->
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 3A. REGISTRAR ERRO (FORMULÁRIO MANUAL INTACTO)            -->
         <!-- ========================================================= -->
         <section id="view-register-error" class="view-section hidden max-w-4xl mx-auto">
           <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 sm:p-7 shadow-xs">
@@ -482,6 +543,7 @@
 
             <form id="error-form" onsubmit="handleSaveError(event)" class="space-y-5">
               <input type="hidden" id="err-id" value="" />
+              <input type="hidden" id="err-round-id" value="" />
 
               <!-- Row 1: Discipline & Topic -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -558,18 +620,18 @@
                 <div class="rounded-xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-surface overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
                   <!-- Formatting Toolbar -->
                   <div class="px-3 py-2 border-b border-slate-200 dark:border-dark-border bg-white/60 dark:bg-dark-card/60 flex flex-wrap items-center gap-1.5">
-                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('bold')" title="Negrito (Ctrl+B)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover font-bold text-xs transition">B</button>
-                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('italic')" title="Itálico (Ctrl+I)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover italic text-xs transition">I</button>
-                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('underline')" title="Sublinhado (Ctrl+U)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover underline text-xs transition">U</button>
+                    <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('err-notes', 'bold')" title="Negrito (Ctrl+B)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover font-bold text-xs transition">B</button>
+                    <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('err-notes', 'italic')" title="Itálico (Ctrl+I)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover italic text-xs transition">I</button>
+                    <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('err-notes', 'underline')" title="Sublinhado (Ctrl+U)" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover underline text-xs transition">U</button>
                     <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
                     <span class="text-[11px] text-slate-400 mr-0.5">Marca-texto:</span>
-                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#fef08a')" title="Marca-texto Amarelo" class="w-5 h-5 rounded-full bg-[#fef08a] border border-slate-400/50 hover:scale-110 transition"></button>
-                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#bbf7d0')" title="Marca-texto Verde" class="w-5 h-5 rounded-full bg-[#bbf7d0] border border-slate-400/50 hover:scale-110 transition"></button>
-                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#fbcfe8')" title="Marca-texto Rosa" class="w-5 h-5 rounded-full bg-[#fbcfe8] border border-slate-400/50 hover:scale-110 transition"></button>
-                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('#bae6fd')" title="Marca-texto Azul" class="w-5 h-5 rounded-full bg-[#bae6fd] border border-slate-400/50 hover:scale-110 transition"></button>
-                    <button type="button" onmousedown="event.preventDefault(); applyNoteHighlight('transparent')" title="Remover marca-texto" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-[11px] text-slate-500 transition">✕</button>
+                    <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('err-notes', '#fef08a')" title="Marca-texto Amarelo" class="w-5 h-5 rounded-full bg-[#fef08a] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('err-notes', '#bbf7d0')" title="Marca-texto Verde" class="w-5 h-5 rounded-full bg-[#bbf7d0] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('err-notes', '#fbcfe8')" title="Marca-texto Rosa" class="w-5 h-5 rounded-full bg-[#fbcfe8] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('err-notes', '#bae6fd')" title="Marca-texto Azul" class="w-5 h-5 rounded-full bg-[#bae6fd] border border-slate-400/50 hover:scale-110 transition"></button>
+                    <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('err-notes', 'transparent')" title="Remover marca-texto" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-[11px] text-slate-500 transition">✕</button>
                     <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
-                    <button type="button" onmousedown="event.preventDefault(); execErrorNoteCmd('insertUnorderedList')" title="Lista com marcadores" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-xs transition">• Lista</button>
+                    <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('err-notes', 'insertUnorderedList')" title="Lista com marcadores" class="px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-xs transition">• Lista</button>
                   </div>
                   <!-- Editable Area -->
                   <div id="err-notes" contenteditable="true" data-placeholder="Explique o raciocínio errado que você teve, a pegadinha da banca e a regra/conceito correto para não errar novamente..." class="error-note-editor w-full px-3.5 py-2.5 text-sm leading-relaxed"></div>
@@ -600,7 +662,7 @@
               <!-- Keyword Search -->
               <div class="relative flex-1">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                <input id="filter-search" type="text" oninput="renderMyErrors()" placeholder="Buscar por palavra-chave no enunciado, notas, gabarito ou tópico..." class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input id="filter-search" type="text" oninput="renderMyErrors()" placeholder="Buscar por palavra-chave no enunciado, notas, gabarito, rodada ou tópico..." class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
 
               <button onclick="switchView('register-error')" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-2 shrink-0 transition">
@@ -761,7 +823,7 @@
           <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 class="font-bold text-base">Registro de Sessões de Estudo</h2>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Acompanhe cada bloco de estudo cronometrado ou adicionado manualmente.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Acompanhe cada bloco de estudo cronometrado, adicionado manualmente ou vindo de Rodadas de Questões.</p>
             </div>
             <button onclick="openSessionModal(false)" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 shrink-0 transition">
               <i data-lucide="plus" class="w-4 h-4"></i>
@@ -777,7 +839,7 @@
                   <tr class="border-b border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-surface text-xs uppercase text-slate-500 dark:text-slate-400">
                     <th class="py-3.5 px-4 font-semibold">Data</th>
                     <th class="py-3.5 px-4 font-semibold">Disciplina</th>
-                    <th class="py-3.5 px-4 font-semibold">Tópico</th>
+                    <th class="py-3.5 px-4 font-semibold">Tópico / Origem</th>
                     <th class="py-3.5 px-4 font-semibold">Duração</th>
                     <th class="py-3.5 px-4 font-semibold">Questões / Acertos</th>
                     <th class="py-3.5 px-4 font-semibold text-right">Ações</th>
@@ -828,7 +890,7 @@
                     <i data-lucide="download" class="w-4 h-4 text-indigo-500"></i>
                     <span>Exportar Dados (.json)</span>
                   </h3>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Baixa todo o edital, métricas, sessões, resumos e caderno de erros.</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Baixa todo o edital, rodadas de questões, métricas, sessões e caderno de erros.</p>
                 </div>
                 <button onclick="exportJSON()" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">
                   Baixar Backup JSON
@@ -855,7 +917,7 @@
           <div class="bg-white dark:bg-dark-card border border-rose-500/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 class="font-bold text-sm text-rose-500">Limpar Dados de Exemplo / Resetar</h2>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Remove os 3 erros de exemplo e zera contadores mantendo todo o conteúdo programático do edital.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Remove os exemplos e zera contadores mantendo todo o conteúdo programático do edital.</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <button onclick="clearDemoExamples()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 transition">
@@ -935,6 +997,218 @@
           Salvar Observações
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CRIAR / EDITAR RODADA DE QUESTÕES                              -->
+  <!-- ===================================================================== -->
+  <div id="round-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-200 dark:border-dark-border flex items-center justify-between shrink-0">
+        <h3 id="round-modal-title" class="font-bold text-base flex items-center gap-2">
+          <i data-lucide="list-checks" class="w-5 h-5 text-indigo-500"></i>
+          <span>Nova Rodada de Questões</span>
+        </h3>
+        <button onclick="closeRoundModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Form -->
+      <form id="round-form" onsubmit="handleSaveRound(event)" class="p-5 overflow-y-auto space-y-4">
+        <input type="hidden" id="round-id" value="" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+          <div class="sm:col-span-8">
+            <label class="block text-xs font-semibold mb-1">Nome / Identificação da Rodada *</label>
+            <input id="round-name" type="text" required placeholder="Ex: Rodada #01 - Juros Simples, Compostos e Rendas Eternas" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="sm:col-span-4">
+            <label class="block text-xs font-semibold mb-1">Data de Realização *</label>
+            <input id="round-date" type="date" required class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Disciplina *</label>
+            <select id="round-discipline" required onchange="renderRoundTopicsCheckboxes()" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Fonte / Origem das Questões *</label>
+            <input id="round-source" type="text" required placeholder="Ex: Provas Passadas + QConcursos" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <!-- Topics Multi-Select Checklist -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold">Assuntos / Tópicos Trabalhados nesta Rodada</label>
+            <div class="flex items-center gap-2 text-[11px]">
+              <button type="button" onclick="toggleAllRoundTopics(true)" class="text-indigo-500 hover:underline font-medium">Marcar todos</button>
+              <span class="text-slate-300 dark:text-slate-600">|</span>
+              <button type="button" onclick="toggleAllRoundTopics(false)" class="text-slate-400 hover:underline font-medium">Limpar</button>
+            </div>
+          </div>
+          <div id="round-topics-checklist" class="max-h-36 overflow-y-auto p-2.5 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border space-y-1.5">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Performance Numbers -->
+        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Total de Questões *</label>
+              <input id="round-total-q" type="number" min="1" max="1000" required value="20" oninput="updateRoundPreviewStats()" class="w-full px-3 py-2 rounded-xl text-sm font-mono bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Questões Acertadas *</label>
+              <input id="round-correct-q" type="number" min="0" max="1000" required value="16" oninput="updateRoundPreviewStats()" class="w-full px-3 py-2 rounded-xl text-sm font-mono bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Tempo Gasto (min, opcional)</label>
+              <input id="round-duration" type="number" min="0" max="1440" value="0" placeholder="0" class="w-full px-3 py-2 rounded-xl text-sm font-mono bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 border-t border-slate-200/80 dark:border-dark-border">
+            <span class="text-slate-500 dark:text-slate-400">Resultado calculado da rodada:</span>
+            <div class="flex items-center gap-2 font-mono font-bold">
+              <span id="round-preview-pct" class="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-500">80% de acerto</span>
+              <span id="round-preview-errors" class="px-2.5 py-0.5 rounded-lg bg-rose-500/15 text-rose-500">4 erros</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Default Checked Sync Option -->
+        <label id="round-sync-wrapper" class="flex items-start gap-2.5 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/25 cursor-pointer select-none">
+          <input id="round-sync-stats" type="checkbox" checked class="mt-0.5 w-4 h-4 rounded accent-indigo-600 cursor-pointer" />
+          <span class="text-xs leading-relaxed text-slate-700 dark:text-slate-200 font-medium">
+            Somar automaticamente estas questões e acertos nos contadores de <strong>Matérias e Tópicos</strong> e registrar no <strong>Histórico de Estudo</strong>.
+          </span>
+        </label>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeRoundModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm flex items-center gap-1.5">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span id="round-submit-label">Salvar Rodada</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL POP-UP: REGISTRAR ERRO A PARTIR DE UMA RODADA                   -->
+  <!-- ===================================================================== -->
+  <div id="round-error-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/65 backdrop-blur-xs">
+    <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+      <!-- Header -->
+      <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="font-bold text-base flex items-center gap-2">
+            <i data-lucide="file-warning" class="w-5 h-5 text-rose-500"></i>
+            <span>Enviar Questão Errada para o Caderno de Erros</span>
+          </h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Esta questão ficará vinculada à rodada e aparecerá na aba Meus Erros.</p>
+        </div>
+        <button onclick="closeRoundErrorModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Body Form -->
+      <form id="round-error-form" onsubmit="handleSaveRoundError(event)" class="p-4 sm:p-5 overflow-y-auto space-y-4">
+        <input type="hidden" id="re-round-id" value="" />
+
+        <!-- Round Context Banner -->
+        <div id="re-context-banner" class="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-xs space-y-1">
+          <!-- Populated via JS -->
+        </div>
+
+        <!-- Specific Topic of the Question -->
+        <div>
+          <label class="block text-xs font-semibold mb-1">Assunto Específico desta Questão *</label>
+          <select id="re-topic" required class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <!-- Statement -->
+        <div>
+          <label class="block text-xs font-semibold mb-1">Enunciado da Questão *</label>
+          <textarea id="re-statement" rows="3" required placeholder="Cole ou resuma o enunciado da questão errada..." class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <!-- Answer & Link -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Gabarito / Resposta Correta *</label>
+            <input id="re-answer" type="text" required placeholder="Ex: Alternativa C) Taxa efetiva = (1 + i)^n - 1" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Link da Questão (Opcional)</label>
+            <input id="re-link" type="url" placeholder="https://www.qconcursos.com/..." class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <!-- Reason, Relevance, Status -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Motivo do Erro *</label>
+            <select id="re-reason" required class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Relevância *</label>
+            <select id="re-relevance" required class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Alta">🔴 Alta</option>
+              <option value="Média">🟡 Média</option>
+              <option value="Baixa">🟢 Baixa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Status *</label>
+            <select id="re-status" required class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Pendente">Pendente de revisão</option>
+              <option value="Superado">Superado ✅</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes with Rich Formatting Toolbar -->
+        <div>
+          <label class="block text-xs font-semibold mb-1">Notas de Erro (Por que errei e o que revisar?) *</label>
+          <div class="rounded-xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-surface overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+            <div class="px-3 py-1.5 border-b border-slate-200 dark:border-dark-border bg-white/60 dark:bg-dark-card/60 flex flex-wrap items-center gap-1.5">
+              <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('re-notes', 'bold')" title="Negrito" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover font-bold text-xs transition">B</button>
+              <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('re-notes', 'italic')" title="Itálico" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover italic text-xs transition">I</button>
+              <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('re-notes', 'underline')" title="Sublinhado" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover underline text-xs transition">U</button>
+              <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
+              <span class="text-[11px] text-slate-400 mr-0.5">Marca-texto:</span>
+              <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('re-notes', '#fef08a')" title="Amarelo" class="w-4 h-4 rounded-full bg-[#fef08a] border border-slate-400/50 hover:scale-110 transition"></button>
+              <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('re-notes', '#bbf7d0')" title="Verde" class="w-4 h-4 rounded-full bg-[#bbf7d0] border border-slate-400/50 hover:scale-110 transition"></button>
+              <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('re-notes', '#fbcfe8')" title="Rosa" class="w-4 h-4 rounded-full bg-[#fbcfe8] border border-slate-400/50 hover:scale-110 transition"></button>
+              <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('re-notes', '#bae6fd')" title="Azul" class="w-4 h-4 rounded-full bg-[#bae6fd] border border-slate-400/50 hover:scale-110 transition"></button>
+              <button type="button" onmousedown="event.preventDefault(); applyHighlightToEditor('re-notes', 'transparent')" title="Remover destaque" class="px-1.5 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-[11px] text-slate-500 transition">✕</button>
+              <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
+              <button type="button" onmousedown="event.preventDefault(); execRichEditorCmd('re-notes', 'insertUnorderedList')" title="Lista" class="px-2 py-0.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-xs transition">• Lista</button>
+            </div>
+            <div id="re-notes" contenteditable="true" data-placeholder="Anote a pegadinha da questão e o conceito correto..." class="error-note-editor w-full px-3.5 py-2 text-sm leading-relaxed"></div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeRoundErrorModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-sm flex items-center gap-1.5">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Enviar para Meus Erros</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1085,7 +1359,6 @@
     const STORAGE_KEY = 'cadernoErrosApp_edital_v1';
     const TIMER_STORAGE_KEY = 'cadernoErrosTimer_v1';
 
-    // Helper: Get local YYYY-MM-DD with day offset
     function getLocalDateStr(offsetDays = 0) {
       const d = new Date();
       d.setDate(d.getDate() + offsetDays);
@@ -1112,7 +1385,7 @@
     }
 
     // =========================================================================
-    // DEFAULT FULL SYLLABUS + 3 REALISTIC EXAMPLES
+    // DEFAULT FULL SYLLABUS + EXAMPLES
     // =========================================================================
     function createInitialState() {
       const today = getLocalDateStr(0);
@@ -1351,9 +1624,23 @@
           { id: 'interpretacao', label: 'Erro de interpretação', color: '#ec4899', emoji: '🔍' }
         ],
         disciplines,
+        rounds: [
+          {
+            id: 'round-demo-1',
+            name: 'Rodada #01 - Afretamentos e Transporte Marítimo',
+            date: today,
+            source: 'QConcursos + Provas Passadas Cesgranrio',
+            disciplineId: 'disc-log',
+            topicIds: ['top-log-3', 'top-log-5', 'top-log-6'],
+            totalQuestions: 20,
+            correctQuestions: 17,
+            durationMinutes: 45
+          }
+        ],
         errors: [
           {
             id: 'err-demo-1',
+            roundId: 'round-demo-1',
             disciplineId: 'disc-log',
             topicId: 'top-log-3',
             statement: 'No mercado mundial de afretamentos marítimos, em qual modalidade o fretador entrega a embarcação armada e tripulada ao afretador por prazo determinado, permanecendo com a gestão náutica, enquanto os custos de combustível (bunkers) e taxas portuárias correm por conta do afretador?',
@@ -1453,6 +1740,9 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.disciplines)) {
+            if (!Array.isArray(parsed.rounds)) parsed.rounds = [];
+            if (!Array.isArray(parsed.errors)) parsed.errors = [];
+            if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
             return parsed;
           }
         }
@@ -1467,7 +1757,7 @@
     function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        updateSidebarBadge();
+        updateSidebarBadges();
       } catch (e) {
         showToast('Erro ao salvar dados localmente.', 'error');
       }
@@ -1486,7 +1776,7 @@
     }
 
     // =========================================================================
-    // UI NOTIFICATIONS & CUSTOM CONFIRM MODAL (NO alert/confirm)
+    // UI NOTIFICATIONS & CUSTOM CONFIRM MODAL
     // =========================================================================
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
@@ -1577,6 +1867,7 @@
     const VIEW_TITLES = {
       dashboard: 'Início (Painel Geral)',
       syllabus: 'Matérias e Tópicos (Conteúdo Programático)',
+      rounds: 'Rodadas de Questões',
       'register-error': 'Registrar Questão Errada',
       'my-errors': 'Meus Erros (Caderno de Revisão)',
       evolution: 'Minha Evolução & Análise de Foco',
@@ -1607,6 +1898,7 @@
       // Render view content
       if (viewId === 'dashboard') renderDashboard();
       if (viewId === 'syllabus') renderSyllabus();
+      if (viewId === 'rounds') renderRounds();
       if (viewId === 'register-error') prepareRegisterErrorView();
       if (viewId === 'my-errors') renderMyErrors();
       if (viewId === 'evolution') renderEvolution();
@@ -1616,9 +1908,11 @@
       lucide.createIcons();
     }
 
-    function updateSidebarBadge() {
+    function updateSidebarBadges() {
       const pendingCount = appState.errors.filter((e) => e.status === 'Pendente').length;
       document.getElementById('sidebar-pending-badge').textContent = pendingCount;
+      const roundsBadge = document.getElementById('sidebar-rounds-badge');
+      if (roundsBadge) roundsBadge.textContent = appState.rounds.length;
     }
 
     // =========================================================================
@@ -1685,7 +1979,7 @@
     // =========================================================================
     function openSessionModal(fromTimer = false) {
       if (fromTimer && timerState.running) {
-        toggleTimer(); // Pause while saving
+        toggleTimer();
       }
 
       document.getElementById('session-from-timer').value = fromTimer ? 'true' : 'false';
@@ -1745,7 +2039,6 @@
         correctCount
       });
 
-      // Also update topic stats if selected
       if (topicId) {
         const disc = appState.disciplines.find((d) => d.id === disciplineId);
         const top = disc?.topics.find((t) => t.id === topicId);
@@ -1787,10 +2080,10 @@
       const monthName = calendarViewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
       document.getElementById('calendar-month-label').textContent = monthName;
 
-      // Active study dates set
       const studiedDates = new Set();
       appState.sessions.forEach((s) => studiedDates.add(s.date));
       appState.errors.forEach((e) => studiedDates.add(e.date));
+      appState.rounds.forEach((r) => studiedDates.add(r.date));
 
       const firstDayWeekday = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1821,7 +2114,6 @@
       }
       grid.innerHTML = html;
 
-      // Calculate consecutive days (streak)
       let streak = 0;
       let checkOffset = 0;
       if (!studiedDates.has(getLocalDateStr(0)) && studiedDates.has(getLocalDateStr(-1))) {
@@ -2210,7 +2502,6 @@
       return disc?.topics.find((t) => t.id === topId);
     }
 
-    // Add / Edit Discipline & Topic Modals
     function openDisciplineModal(discId = '') {
       const disc = discId ? appState.disciplines.find((d) => d.id === discId) : null;
       document.getElementById('syllabus-modal-title').textContent = disc ? 'Editar Disciplina' : 'Nova Disciplina';
@@ -2333,6 +2624,510 @@
     }
 
     // =========================================================================
+    // 2B. RODADAS DE QUESTÕES & POP-UP DE ERROS DA RODADA
+    // =========================================================================
+    function renderRounds() {
+      const discFilterEl = document.getElementById('rounds-filter-discipline');
+      const currentDiscFilter = discFilterEl.value;
+      discFilterEl.innerHTML = `<option value="all">Todas as Disciplinas</option>` +
+        appState.disciplines.map((d) => `<option value="${d.id}">${d.name}</option>`).join('');
+      if ([...discFilterEl.options].some((o) => o.value === currentDiscFilter)) {
+        discFilterEl.value = currentDiscFilter;
+      }
+
+      const query = (document.getElementById('rounds-search')?.value || '').toLowerCase().trim();
+      const discFilter = discFilterEl.value;
+
+      // Summary Strip (Global Rounds KPIs)
+      const totalRounds = appState.rounds.length;
+      const totalQsRounds = appState.rounds.reduce((acc, r) => acc + (r.totalQuestions || 0), 0);
+      const totalCorrectRounds = appState.rounds.reduce((acc, r) => acc + (r.correctQuestions || 0), 0);
+      const avgAccuracyRounds = totalQsRounds > 0 ? Math.round((totalCorrectRounds / totalQsRounds) * 100) : 0;
+      const totalMappedErrors = appState.errors.filter((e) => e.roundId).length;
+
+      document.getElementById('rounds-summary-strip').innerHTML = `
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400 block">Rodadas Feitas</span>
+          <span class="font-mono font-extrabold text-base">${totalRounds}</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400 block">Questões em Rodadas</span>
+          <span class="font-mono font-extrabold text-base">${totalCorrectRounds}/${totalQsRounds}</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400 block">Aproveitamento Médio</span>
+          <span class="font-mono font-extrabold text-base text-emerald-500">${avgAccuracyRounds}%</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400 block">Erros Enviados ao Caderno</span>
+          <span class="font-mono font-extrabold text-base text-rose-500">${totalMappedErrors}</span>
+        </div>
+      `;
+
+      const filtered = appState.rounds.filter((r) => {
+        if (discFilter !== 'all' && r.disciplineId !== discFilter) return false;
+        if (query) {
+          const disc = appState.disciplines.find((d) => d.id === r.disciplineId);
+          const topicNames = (r.topicIds || [])
+            .map((tid) => disc?.topics.find((t) => t.id === tid)?.name || '')
+            .join(' ');
+          const haystack = `${r.name} ${r.source} ${disc?.name || ''} ${topicNames}`.toLowerCase();
+          if (!haystack.includes(query)) return false;
+        }
+        return true;
+      });
+
+      const container = document.getElementById('rounds-list');
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-10 text-center">
+            <i data-lucide="list-checks" class="w-10 h-10 text-indigo-500/70 mx-auto mb-3"></i>
+            <h3 class="font-bold text-sm">Nenhuma rodada encontrada</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">Crie uma rodada para registrar seus simulados e baterias de exercícios.</p>
+            <button onclick="openRoundModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">
+              + Criar Primeira Rodada
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filtered
+        .map((r) => {
+          const disc = appState.disciplines.find((d) => d.id === r.disciplineId);
+          const totalQ = r.totalQuestions || 0;
+          const correctQ = r.correctQuestions || 0;
+          const wrongQ = Math.max(0, totalQ - correctQ);
+          const pct = totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 0;
+          const linkedErrors = appState.errors.filter((e) => e.roundId === r.id);
+
+          const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-rose-500';
+          const pctTextColor = pct >= 80 ? 'text-emerald-500' : pct >= 60 ? 'text-amber-500' : 'text-rose-500';
+
+          const topicPills = (r.topicIds || [])
+            .map((tid) => {
+              const tObj = disc?.topics.find((t) => t.id === tid);
+              if (!tObj) return '';
+              return `<span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border text-[11px] font-medium text-slate-700 dark:text-slate-300">${tObj.name}</span>`;
+            })
+            .filter(Boolean)
+            .join('');
+
+          const linkedErrorsHtml =
+            linkedErrors.length > 0
+              ? `<div class="pt-3 border-t border-slate-200/80 dark:border-dark-border space-y-2">
+                  <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Erros desta rodada enviados ao Caderno (${linkedErrors.length}/${wrongQ})</span>
+                    <button onclick="jumpToRoundErrorsInNotebook('${r.name.replace(/'/g, "\\'")}')" class="text-indigo-500 hover:underline normal-case font-semibold">Abrir no Caderno de Erros →</button>
+                  </div>
+                  <div class="space-y-1.5">
+                    ${linkedErrors
+                      .map((err) => {
+                        const errTop = disc?.topics.find((t) => t.id === err.topicId);
+                        return `
+                          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200/70 dark:border-dark-border flex items-center justify-between gap-2 text-xs">
+                            <div class="min-w-0">
+                              <span class="font-semibold text-rose-500 mr-1.5">•</span>
+                              <span class="font-medium truncate">${err.statement}</span>
+                              ${errTop ? `<span class="block text-[11px] text-slate-400 mt-0.5">Assunto: ${errTop.name}</span>` : ''}
+                            </div>
+                            <span class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${
+                              err.status === 'Superado' ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'
+                            }">${err.status}</span>
+                          </div>
+                        `;
+                      })
+                      .join('')}
+                  </div>
+                </div>`
+              : '';
+
+          return `
+            <article class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 shadow-xs space-y-4">
+              <!-- Top Header -->
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="px-2.5 py-0.5 rounded-lg font-semibold text-white" style="background-color: ${disc?.color || '#6366f1'}">${disc ? disc.name : 'Disciplina'}</span>
+                    <span class="px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-dark-surface text-slate-600 dark:text-slate-300 font-medium">📅 ${formatDisplayDate(r.date)}</span>
+                    <span class="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-500 font-semibold">🏷️ ${r.source}</span>
+                  </div>
+                  <h3 class="font-bold text-base sm:text-lg pt-1">${r.name}</h3>
+                </div>
+
+                <!-- Edit / Delete Round -->
+                <div class="flex items-center gap-1.5">
+                  <button onclick="openRoundModal('${r.id}')" title="Editar Rodada" class="p-2 rounded-xl bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-500 transition">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="deleteRound('${r.id}')" title="Excluir Rodada" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Covered Topics -->
+              ${
+                topicPills
+                  ? `<div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-[11px] font-semibold text-slate-400 mr-1">Assuntos:</span>
+                      ${topicPills}
+                    </div>`
+                  : ''
+              }
+
+              <!-- Score & Error Registration CTA -->
+              <div class="p-4 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex-1 space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-3 font-mono">
+                      <span>Acertos: <strong class="text-emerald-500 text-sm">${correctQ}</strong> / <strong>${totalQ}</strong></span>
+                      <span>Erros: <strong class="text-rose-500 text-sm">${wrongQ}</strong></span>
+                      <span class="text-slate-400">|</span>
+                      <span>Mapeados: <strong>${linkedErrors.length}/${wrongQ}</strong></span>
+                    </div>
+                    <span class="font-mono font-extrabold text-sm ${pctTextColor}">${pct}%</span>
+                  </div>
+                  <div class="w-full h-2.5 rounded-full bg-slate-200 dark:bg-dark-card overflow-hidden">
+                    <div class="h-full rounded-full ${barColor} transition-all" style="width: ${pct}%"></div>
+                  </div>
+                </div>
+
+                <div class="shrink-0">
+                  <button onclick="openRoundErrorModal('${r.id}')" class="w-full md:w-auto px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-sm shadow-rose-500/20 flex items-center justify-center gap-2 transition">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Registrar Erro desta Rodada</span>
+                  </button>
+                </div>
+              </div>
+
+              ${linkedErrorsHtml}
+            </article>
+          `;
+        })
+        .join('');
+
+      lucide.createIcons();
+    }
+
+    function jumpToRoundErrorsInNotebook(roundName) {
+      switchView('my-errors');
+      document.getElementById('filter-search').value = roundName;
+      renderMyErrors();
+    }
+
+    function openRoundModal(editRoundId = '') {
+      const round = editRoundId ? appState.rounds.find((r) => r.id === editRoundId) : null;
+      document.getElementById('round-modal-title').innerHTML = round
+        ? `<i data-lucide="pencil" class="w-5 h-5 text-indigo-500"></i><span>Editar Rodada de Questões</span>`
+        : `<i data-lucide="list-checks" class="w-5 h-5 text-indigo-500"></i><span>Nova Rodada de Questões</span>`;
+      document.getElementById('round-submit-label').textContent = round ? 'Atualizar Rodada' : 'Salvar Rodada';
+
+      document.getElementById('round-id').value = round ? round.id : '';
+      document.getElementById('round-name').value = round ? round.name : '';
+      document.getElementById('round-date').value = round ? round.date : getLocalDateStr(0);
+      document.getElementById('round-source').value = round ? round.source : 'QConcursos e Provas Passadas';
+
+      const discSelect = document.getElementById('round-discipline');
+      discSelect.innerHTML = appState.disciplines
+        .map((d) => `<option value="${d.id}">${d.name}</option>`)
+        .join('');
+      if (round && appState.disciplines.some((d) => d.id === round.disciplineId)) {
+        discSelect.value = round.disciplineId;
+      }
+
+      renderRoundTopicsCheckboxes(round ? round.topicIds : []);
+
+      document.getElementById('round-total-q').value = round ? round.totalQuestions : 20;
+      document.getElementById('round-correct-q').value = round ? round.correctQuestions : 16;
+      document.getElementById('round-duration').value = round ? (round.durationMinutes || 0) : 0;
+      updateRoundPreviewStats();
+
+      // Show sync checkbox only on creation to avoid duplicate additions when editing
+      const syncWrapper = document.getElementById('round-sync-wrapper');
+      if (round) {
+        syncWrapper.classList.add('hidden');
+      } else {
+        syncWrapper.classList.remove('hidden');
+        document.getElementById('round-sync-stats').checked = true;
+      }
+
+      const modal = document.getElementById('round-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeRoundModal() {
+      const modal = document.getElementById('round-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderRoundTopicsCheckboxes(preselectedIds = []) {
+      const discId = document.getElementById('round-discipline').value;
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      const container = document.getElementById('round-topics-checklist');
+      const selectedSet = new Set(preselectedIds);
+
+      if (!disc || disc.topics.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400">Nenhum tópico cadastrado nesta disciplina.</p>`;
+        return;
+      }
+
+      container.innerHTML = disc.topics
+        .map(
+          (t) => `
+          <label class="flex items-start gap-2.5 p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-dark-hover cursor-pointer text-xs">
+            <input type="checkbox" name="round-topic-item" value="${t.id}" ${selectedSet.has(t.id) ? 'checked' : ''} class="mt-0.5 rounded accent-indigo-600 cursor-pointer" />
+            <span class="leading-snug">${t.name}</span>
+          </label>
+        `
+        )
+        .join('');
+    }
+
+    function toggleAllRoundTopics(checkAll) {
+      document.querySelectorAll('input[name="round-topic-item"]').forEach((cb) => {
+        cb.checked = checkAll;
+      });
+    }
+
+    function updateRoundPreviewStats() {
+      const total = Math.max(0, parseInt(document.getElementById('round-total-q').value, 10) || 0);
+      const correct = Math.min(total, Math.max(0, parseInt(document.getElementById('round-correct-q').value, 10) || 0));
+      const errors = Math.max(0, total - correct);
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      document.getElementById('round-preview-pct').textContent = `${pct}% de acerto`;
+      document.getElementById('round-preview-errors').textContent = `${errors} ${errors === 1 ? 'erro' : 'erros'}`;
+    }
+
+    function handleSaveRound(e) {
+      e.preventDefault();
+      const existingId = document.getElementById('round-id').value;
+      const name = document.getElementById('round-name').value.trim();
+      const date = document.getElementById('round-date').value;
+      const disciplineId = document.getElementById('round-discipline').value;
+      const source = document.getElementById('round-source').value.trim();
+      const topicIds = [...document.querySelectorAll('input[name="round-topic-item"]:checked')].map((cb) => cb.value);
+
+      const totalQuestions = Math.max(1, parseInt(document.getElementById('round-total-q').value, 10) || 1);
+      const correctQuestions = Math.min(totalQuestions, Math.max(0, parseInt(document.getElementById('round-correct-q').value, 10) || 0));
+      const durationMinutes = Math.max(0, parseInt(document.getElementById('round-duration').value, 10) || 0);
+
+      if (existingId) {
+        const idx = appState.rounds.findIndex((r) => r.id === existingId);
+        if (idx !== -1) {
+          appState.rounds[idx] = {
+            ...appState.rounds[idx],
+            name,
+            date,
+            disciplineId,
+            source,
+            topicIds,
+            totalQuestions,
+            correctQuestions,
+            durationMinutes
+          };
+        }
+        saveState();
+        closeRoundModal();
+        renderRounds();
+        showToast('Rodada atualizada!');
+        return;
+      }
+
+      const newRoundId = generateId('round');
+      appState.rounds.unshift({
+        id: newRoundId,
+        name,
+        date,
+        disciplineId,
+        source,
+        topicIds,
+        totalQuestions,
+        correctQuestions,
+        durationMinutes
+      });
+
+      // Automatic sync to "Matérias e Tópicos" and "Histórico de Estudo"
+      const shouldSync = document.getElementById('round-sync-stats').checked;
+      if (shouldSync) {
+        const disc = appState.disciplines.find((d) => d.id === disciplineId);
+        if (disc && topicIds.length > 0) {
+          const n = topicIds.length;
+          const baseQ = Math.floor(totalQuestions / n);
+          const remQ = totalQuestions % n;
+          const baseC = Math.floor(correctQuestions / n);
+          const remC = correctQuestions % n;
+
+          topicIds.forEach((tid, index) => {
+            const top = disc.topics.find((t) => t.id === tid);
+            if (top) {
+              const addQ = baseQ + (index < remQ ? 1 : 0);
+              const addC = Math.min(addQ, baseC + (index < remC ? 1 : 0));
+              top.questoes = (top.questoes || 0) + addQ;
+              top.acertos = (top.acertos || 0) + addC;
+              top.lastStudy = date;
+            }
+          });
+        }
+
+        appState.sessions.unshift({
+          id: generateId('sess'),
+          roundId: newRoundId,
+          roundName: name,
+          date,
+          disciplineId,
+          topicId: topicIds.length === 1 ? topicIds[0] : null,
+          durationMinutes,
+          questionsCount: totalQuestions,
+          correctCount: correctQuestions
+        });
+      }
+
+      saveState();
+      closeRoundModal();
+      renderRounds();
+      showToast(
+        shouldSync
+          ? 'Rodada salva e sincronizada com Tópicos e Histórico!'
+          : 'Rodada de questões salva!'
+      );
+    }
+
+    async function deleteRound(roundId) {
+      const ok = await showConfirm(
+        'Excluir Rodada',
+        'Deseja excluir esta rodada? As questões já enviadas ao Caderno de Erros continuarão salvas lá.',
+        'Excluir'
+      );
+      if (!ok) return;
+      appState.rounds = appState.rounds.filter((r) => r.id !== roundId);
+      saveState();
+      renderRounds();
+      showToast('Rodada removida.', 'info');
+    }
+
+    // POP-UP MODAL: REGISTER ERROR FROM A ROUND
+    function openRoundErrorModal(roundId) {
+      const round = appState.rounds.find((r) => r.id === roundId);
+      if (!round) return;
+      const disc = appState.disciplines.find((d) => d.id === round.disciplineId);
+
+      document.getElementById('round-error-form').reset();
+      document.getElementById('re-round-id').value = round.id;
+      document.getElementById('re-notes').innerHTML = '';
+
+      // Populate Context Banner
+      document.getElementById('re-context-banner').innerHTML = `
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 font-semibold text-indigo-700 dark:text-indigo-300">
+          <span>🎯 Rodada: ${round.name}</span>
+          <span>📅 Data: ${formatDisplayDate(round.date)}</span>
+        </div>
+        <div class="text-slate-600 dark:text-slate-300">
+          <strong>Disciplina:</strong> ${disc ? disc.name : '—'} • <strong>Fonte:</strong> ${round.source}
+        </div>
+      `;
+
+      // Populate Topic Select (Round's topics highlighted first, then remaining topics of the discipline)
+      const topicSelect = document.getElementById('re-topic');
+      topicSelect.innerHTML = '';
+      if (disc && disc.topics.length > 0) {
+        const roundTopicSet = new Set(round.topicIds || []);
+        const roundTopics = disc.topics.filter((t) => roundTopicSet.has(t.id));
+        const otherTopics = disc.topics.filter((t) => !roundTopicSet.has(t.id));
+
+        if (roundTopics.length > 0) {
+          const grp1 = document.createElement('optgroup');
+          grp1.label = 'Assuntos Trabalhados nesta Rodada';
+          roundTopics.forEach((t) => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name;
+            grp1.appendChild(opt);
+          });
+          topicSelect.appendChild(grp1);
+        }
+
+        if (otherTopics.length > 0) {
+          const grp2 = document.createElement('optgroup');
+          grp2.label = roundTopics.length > 0 ? 'Outros Tópicos da Disciplina' : 'Tópicos da Disciplina';
+          otherTopics.forEach((t) => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name;
+            grp2.appendChild(opt);
+          });
+          topicSelect.appendChild(grp2);
+        }
+      } else {
+        topicSelect.innerHTML = `<option value="">Tópico Geral</option>`;
+      }
+
+      // Populate Reasons
+      document.getElementById('re-reason').innerHTML = appState.errorReasons
+        .map((r) => `<option value="${r.id}">${r.emoji} ${r.label}</option>`)
+        .join('');
+
+      const modal = document.getElementById('round-error-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeRoundErrorModal() {
+      const modal = document.getElementById('round-error-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleSaveRoundError(e) {
+      e.preventDefault();
+      const roundId = document.getElementById('re-round-id').value;
+      const round = appState.rounds.find((r) => r.id === roundId);
+      if (!round) return;
+
+      const notesEl = document.getElementById('re-notes');
+      if (notesEl.textContent.trim().length === 0) {
+        showToast('Preencha as notas de erro antes de enviar.', 'error');
+        notesEl.focus();
+        return;
+      }
+
+      const topicId = document.getElementById('re-topic').value;
+      const statement = document.getElementById('re-statement').value.trim();
+      const answer = document.getElementById('re-answer').value.trim();
+      const link = document.getElementById('re-link').value.trim();
+      const reasonId = document.getElementById('re-reason').value;
+      const relevance = document.getElementById('re-relevance').value;
+      const status = document.getElementById('re-status').value;
+      const notes = notesEl.innerHTML.trim();
+
+      appState.errors.unshift({
+        id: generateId('err'),
+        roundId: round.id,
+        disciplineId: round.disciplineId,
+        topicId,
+        statement,
+        answer,
+        link,
+        date: round.date,
+        reasonId,
+        relevance,
+        status,
+        notes
+      });
+
+      saveState();
+      closeRoundErrorModal();
+      renderRounds();
+      showToast('Questão enviada para o Caderno de Erros! 🎯');
+    }
+
+    // =========================================================================
     // RICH TEXT NOTES DRAWER PER TOPIC
     // =========================================================================
     function openNotesDrawer(discId, topId) {
@@ -2410,16 +3205,16 @@
     }
 
     // =========================================================================
-    // 3A. REGISTRAR ERRO (FORM, RICH NOTES & EDITING)
+    // SHARED RICH TEXT TOOLBAR HELPERS FOR ERROR NOTES
     // =========================================================================
-    function execErrorNoteCmd(command, value = null) {
-      const editor = document.getElementById('err-notes');
+    function execRichEditorCmd(editorId, command, value = null) {
+      const editor = document.getElementById(editorId);
       editor.focus();
       document.execCommand(command, false, value);
     }
 
-    function applyNoteHighlight(color) {
-      const editor = document.getElementById('err-notes');
+    function applyHighlightToEditor(editorId, color) {
+      const editor = document.getElementById(editorId);
       editor.focus();
       if (color === 'transparent') {
         document.execCommand('hiliteColor', false, 'transparent');
@@ -2445,6 +3240,9 @@
       }
     }
 
+    // =========================================================================
+    // 3A. REGISTRAR ERRO (MANUAL FORM & EDITING)
+    // =========================================================================
     function prepareRegisterErrorView(editErrorId = null) {
       const discSelect = document.getElementById('err-discipline');
       discSelect.innerHTML = appState.disciplines
@@ -2464,6 +3262,7 @@
         document.getElementById('cancel-edit-error-btn').classList.remove('hidden');
 
         document.getElementById('err-id').value = err.id;
+        document.getElementById('err-round-id').value = err.roundId || '';
         discSelect.value = err.disciplineId;
         populateErrorTopicSelect();
         document.getElementById('err-topic').value = err.topicId;
@@ -2479,6 +3278,7 @@
         document.getElementById('error-form-title').innerHTML = `<i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i><span>Registrar Nova Questão Errada</span>`;
         document.getElementById('error-form-submit-text').textContent = 'Salvar no Caderno de Erros';
         document.getElementById('cancel-edit-error-btn').classList.add('hidden');
+        document.getElementById('err-round-id').value = '';
         document.getElementById('err-date').value = getLocalDateStr(0);
         populateErrorTopicSelect();
       }
@@ -2501,6 +3301,7 @@
     function resetErrorForm() {
       document.getElementById('error-form').reset();
       document.getElementById('err-id').value = '';
+      document.getElementById('err-round-id').value = '';
       document.getElementById('err-notes').innerHTML = '';
       document.getElementById('err-date').value = getLocalDateStr(0);
       document.getElementById('error-form-title').innerHTML = `<i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i><span>Registrar Nova Questão Errada</span>`;
@@ -2520,6 +3321,7 @@
       }
 
       const existingId = document.getElementById('err-id').value;
+      const preservedRoundId = document.getElementById('err-round-id').value || undefined;
       const disciplineId = document.getElementById('err-discipline').value;
       const topicId = document.getElementById('err-topic').value;
       const statement = document.getElementById('err-statement').value.trim();
@@ -2534,7 +3336,20 @@
       if (existingId) {
         const idx = appState.errors.findIndex((item) => item.id === existingId);
         if (idx !== -1) {
-          appState.errors[idx] = { id: existingId, disciplineId, topicId, statement, answer, link, date, reasonId, relevance, status, notes };
+          appState.errors[idx] = {
+            id: existingId,
+            ...(preservedRoundId ? { roundId: preservedRoundId } : {}),
+            disciplineId,
+            topicId,
+            statement,
+            answer,
+            link,
+            date,
+            reasonId,
+            relevance,
+            status,
+            notes
+          };
         }
         showToast('Questão atualizada com sucesso!');
       } else {
@@ -2552,7 +3367,6 @@
           notes
         });
 
-        // Increment question count on the topic automatically
         const top = findTopic(disciplineId, topicId);
         if (top) {
           top.questoes = (top.questoes || 0) + 1;
@@ -2616,8 +3430,9 @@
         if (query) {
           const disc = appState.disciplines.find((d) => d.id === err.disciplineId);
           const top = disc?.topics.find((t) => t.id === err.topicId);
+          const round = err.roundId ? appState.rounds.find((r) => r.id === err.roundId) : null;
           const plainNotes = (err.notes || '').replace(/<[^>]*>/g, ' ');
-          const haystack = `${err.statement} ${err.answer} ${plainNotes} ${disc?.name || ''} ${top?.name || ''}`.toLowerCase();
+          const haystack = `${err.statement} ${err.answer} ${plainNotes} ${disc?.name || ''} ${top?.name || ''} ${round?.name || ''}`.toLowerCase();
           if (!haystack.includes(query)) return false;
         }
         return true;
@@ -2643,6 +3458,7 @@
         .map((err) => {
           const disc = appState.disciplines.find((d) => d.id === err.disciplineId);
           const top = disc?.topics.find((t) => t.id === err.topicId);
+          const round = err.roundId ? appState.rounds.find((r) => r.id === err.roundId) : null;
           const reason = appState.errorReasons.find((r) => r.id === err.reasonId) || { emoji: '❓', label: 'Outro', color: '#64748b' };
           const isRevealed = revealedErrorIds.has(err.id);
           const isOvercome = err.status === 'Superado';
@@ -2665,12 +3481,19 @@
             <article class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border ${borderLeftClass} rounded-2xl p-5 shadow-xs space-y-4">
               <!-- Breadcrumb & Status -->
               <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div class="text-slate-500 dark:text-slate-400 font-medium">
+                <div class="text-slate-500 dark:text-slate-400 font-medium flex flex-wrap items-center gap-y-1">
                   <span class="font-semibold text-indigo-500">${disc ? disc.name : 'Disciplina'}</span>
                   <span class="mx-1">›</span>
                   <span>${top ? top.name : 'Tópico Geral'}</span>
                   <span class="mx-1.5">•</span>
                   <span>${formatDisplayDate(err.date)}</span>
+                  ${
+                    round
+                      ? `<button onclick="switchView('rounds')" title="Ver rodada de origem" class="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25 text-[11px] font-semibold transition">
+                          🎯 ${round.name}
+                        </button>`
+                      : ''
+                  }
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -2795,7 +3618,6 @@
     // 4. MINHA EVOLUÇÃO (KPIs & CHART.JS ANALYTICS)
     // =========================================================================
     function renderEvolution() {
-      // KPIs
       const totalMinutes = appState.sessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
       let totalQuestions = 0;
       let totalCorrect = 0;
@@ -2820,11 +3642,10 @@
       const textColor = isDark ? '#94a3b8' : '#475569';
       const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.25)';
 
-      // Destroy old charts before redraw
       Object.values(charts).forEach((c) => c && c.destroy());
       charts = {};
 
-      // 1. Line Chart: Accumulated Registered vs Overcome Errors by Date
+      // 1. Line Chart
       const sortedErrors = [...appState.errors].sort((a, b) => a.date.localeCompare(b.date));
       const uniqueDates = [...new Set(sortedErrors.map((e) => e.date))];
       if (uniqueDates.length === 0) uniqueDates.push(getLocalDateStr(0));
@@ -2877,7 +3698,7 @@
         }
       });
 
-      // 2. Doughnut Chart: Error Causes + Main Cause Highlight
+      // 2. Doughnut Chart
       const reasonStats = appState.errorReasons
         .map((r) => ({
           ...r,
@@ -3000,7 +3821,7 @@
     function renderHistory() {
       const tbody = document.getElementById('history-table-body');
       if (appState.sessions.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-500">Nenhuma sessão registrada ainda. Use o cronômetro acima ou registre manualmente!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-500">Nenhuma sessão registrada ainda. Use o cronômetro acima, crie uma rodada ou registre manualmente!</td></tr>`;
         return;
       }
 
@@ -3008,12 +3829,20 @@
         .map((s) => {
           const disc = appState.disciplines.find((d) => d.id === s.disciplineId);
           const top = disc?.topics.find((t) => t.id === s.topicId);
+          const originLabel = s.roundName
+            ? `<span class="text-indigo-500 font-semibold">🎯 ${s.roundName}</span>`
+            : (top ? top.name : 'Estudo Geral');
+          const durationLabel =
+            s.durationMinutes > 0
+              ? formatMinutes(s.durationMinutes)
+              : (s.roundId ? 'Rodada' : '00h 00m');
+
           return `
             <tr class="hover:bg-slate-50/70 dark:hover:bg-dark-hover/40 transition">
               <td class="py-3 px-4 font-mono text-xs whitespace-nowrap">${formatDisplayDate(s.date)}</td>
               <td class="py-3 px-4 font-semibold text-xs">${disc ? disc.name : 'Disciplina'}</td>
-              <td class="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">${top ? top.name : 'Estudo Geral'}</td>
-              <td class="py-3 px-4 font-mono text-xs font-bold text-indigo-500 whitespace-nowrap">${formatMinutes(s.durationMinutes)}</td>
+              <td class="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">${originLabel}</td>
+              <td class="py-3 px-4 font-mono text-xs font-bold text-indigo-500 whitespace-nowrap">${durationLabel}</td>
               <td class="py-3 px-4 font-mono text-xs whitespace-nowrap">
                 ${s.questionsCount > 0 ? `${s.correctCount}/${s.questionsCount} (${Math.round((s.correctCount / s.questionsCount) * 100)}%)` : '—'}
               </td>
@@ -3112,6 +3941,8 @@
           if (!parsed || !Array.isArray(parsed.disciplines) || !Array.isArray(parsed.errors)) {
             throw new Error('Formato JSON inválido');
           }
+          if (!Array.isArray(parsed.rounds)) parsed.rounds = [];
+          if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
           appState = parsed;
           saveState();
           applyTheme();
@@ -3128,12 +3959,13 @@
     async function clearDemoExamples() {
       const ok = await showConfirm(
         'Limpar Dados de Exemplo',
-        'Isso removerá as questões de exemplo e sessões iniciais, zerando os contadores dos tópicos mas mantendo todo o edital cadastrado. Continuar?',
+        'Isso removerá as questões de exemplo, rodadas e sessões iniciais, zerando os contadores dos tópicos mas mantendo todo o edital cadastrado. Continuar?',
         'Limpar Exemplos'
       );
       if (!ok) return;
 
       appState.errors = [];
+      appState.rounds = [];
       appState.sessions = [];
       appState.disciplines.forEach((d) => {
         d.topics.forEach((t) => {
@@ -3171,7 +4003,7 @@
     // =========================================================================
     window.addEventListener('DOMContentLoaded', () => {
       applyTheme();
-      updateSidebarBadge();
+      updateSidebarBadges();
       initTimerOnLoad();
       switchView('dashboard');
     });
