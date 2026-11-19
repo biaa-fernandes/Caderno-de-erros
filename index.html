@@ -32,6 +32,13 @@
     .notes-html table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.75rem; }
     .notes-html th, .notes-html td { border: 1px solid #cbd5e1; padding: 0.35rem 0.5rem; text-align: left; }
     .notes-html th { background-color: #f1f5f9; font-weight: 600; }
+    .bizu-editor:empty::before {
+      content: attr(data-placeholder);
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    .bizu-editor ul { list-style-type: disc; padding-left: 1.25rem; margin: 0.25rem 0; }
+    .bizu-editor ol { list-style-type: decimal; padding-left: 1.25rem; margin: 0.25rem 0; }
     ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
@@ -2319,6 +2326,34 @@ E) R$ 11.576,25`;
       renderCadernoErros();
     }
 
+    function temTextoBizu(html) {
+      if (!html) return false;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent.trim().length > 0;
+    }
+
+    function prepararHtmlBizu(conteudo) {
+      if (!conteudo) return '';
+      const temTagsHtml = /<[a-z][\s\S]*>/i.test(conteudo);
+      return temTagsHtml ? conteudo : escapeHtml(conteudo).replace(/\n/g, '<br>');
+    }
+
+    function formatarBizu(id, comando, valor = null) {
+      const editor = document.getElementById(`bizu-editor-${id}`);
+      if (!editor) return;
+      editor.focus();
+
+      if (comando === 'limpar') {
+        document.execCommand('removeFormat', false, null);
+        document.execCommand('hiliteColor', false, 'transparent');
+        document.execCommand('foreColor', false, '#0f172a');
+        return;
+      }
+
+      document.execCommand(comando, false, valor);
+    }
+
     function renderCadernoErros() {
       const fMateria = document.getElementById('filtro-erro-materia').value;
       const fStatus = document.getElementById('filtro-erro-status').value;
@@ -2327,7 +2362,7 @@ E) R$ 11.576,25`;
 
       const filtrados = estado.errors.filter(e => {
         const superado = e.status === 'Superado';
-        const semBizu = !e.notes || !e.notes.trim();
+        const semBizu = !temTextoBizu(e.notes);
 
         if (fMateria && fMateria !== 'todas' && e.disciplineId !== fMateria) return false;
         if (fOrigem && fOrigem !== 'todas' && e.origem !== fOrigem) return false;
@@ -2340,7 +2375,8 @@ E) R$ 11.576,25`;
         if (fBusca) {
           const nomeDisc = getNomeDisciplina(e.disciplineId);
           const nomeTop = getNomeTopico(e.disciplineId, e.topicId, e.topicName);
-          const alvo = `${e.codigo} ${nomeDisc} ${nomeTop} ${e.statement} ${e.answer} ${e.notes} ${e.origem}`.toLowerCase();
+          const notasTexto = (e.notes || '').replace(/<[^>]*>/g, ' ');
+          const alvo = `${e.codigo} ${nomeDisc} ${nomeTop} ${e.statement} ${e.answer} ${notasTexto} ${e.origem}`.toLowerCase();
           if (!alvo.includes(fBusca)) return false;
         }
         return true;
@@ -2358,13 +2394,14 @@ E) R$ 11.576,25`;
       }
 
       container.innerHTML = filtrados.map(e => {
-        const semBizu = !e.notes || !e.notes.trim();
+        const semBizu = !temTextoBizu(e.notes);
         const ehDuvida = e.tipoRegistro === 'duvida';
         const superado = e.status === 'Superado';
         const nomeDisc = getNomeDisciplina(e.disciplineId);
         const nomeTop = getNomeTopico(e.disciplineId, e.topicId, e.topicName);
         const motivo = getMotivoErro(e.reasonId);
         const qtdRevisoes = e.revisoes || 0;
+        const htmlBizu = prepararHtmlBizu(e.notes || '');
 
         return `
           <div class="bg-white rounded-2xl border ${superado ? 'border-emerald-200 bg-emerald-50/20' : semBizu ? 'border-amber-300' : 'border-slate-200'} p-5 shadow-sm space-y-4">
@@ -2427,7 +2464,7 @@ E) R$ 11.576,25`;
               </div>
             ` : ''}
 
-            <!-- RESPOSTA CORRETA + CAMPO ABERTO PARA BIZU / MOTIVO DO ERRO -->
+            <!-- RESPOSTA CORRETA + EDITOR FORMATÁVEL PARA BIZU / MOTIVO DO ERRO -->
             <div class="pt-1 space-y-2">
               <div class="flex items-center justify-between">
                 <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -2444,10 +2481,68 @@ E) R$ 11.576,25`;
                     <strong>Resposta Correta:</strong> ${escapeHtml(e.answer)}
                   </div>
                 ` : ''}
-                <textarea id="bizu-input-${e.id}" rows="2"
-                          placeholder="Escreva aqui por que você errou e qual o macete / regra para acertar na próxima..."
-                          class="w-full p-3 text-sm border ${semBizu ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 bg-white'} rounded-xl focus:border-indigo-500 focus:bg-white outline-none">${escapeHtml(e.notes || '')}</textarea>
-                <div class="flex justify-end">
+
+                <div class="rounded-xl border ${semBizu ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200 bg-white'} overflow-hidden focus-within:border-indigo-500 transition">
+                  <!-- BARRA DE FORMATAÇÃO -->
+                  <div class="flex flex-wrap items-center gap-1 px-2.5 py-1.5 bg-slate-50 border-b border-slate-200/80">
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'bold')"
+                            class="w-7 h-7 rounded-lg hover:bg-slate-200/80 text-slate-700 font-bold text-xs flex items-center justify-center transition" title="Negrito (Ctrl+B)">
+                      B
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'italic')"
+                            class="w-7 h-7 rounded-lg hover:bg-slate-200/80 text-slate-700 italic font-serif text-xs flex items-center justify-center transition" title="Itálico (Ctrl+I)">
+                      I
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'underline')"
+                            class="w-7 h-7 rounded-lg hover:bg-slate-200/80 text-slate-700 underline text-xs flex items-center justify-center transition" title="Sublinhado (Ctrl+U)">
+                      U
+                    </button>
+
+                    <span class="w-px h-4 bg-slate-300 mx-1"></span>
+
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'hiliteColor', '#fef08a')"
+                            class="px-2 h-7 rounded-lg hover:bg-slate-200/80 text-slate-800 text-[11px] font-semibold flex items-center gap-1 transition" title="Marca-texto Amarelo">
+                      <span class="w-3.5 h-3.5 rounded-xs bg-yellow-300 border border-yellow-400 inline-block"></span> Amarelo
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'hiliteColor', '#bbf7d0')"
+                            class="px-2 h-7 rounded-lg hover:bg-slate-200/80 text-slate-800 text-[11px] font-semibold flex items-center gap-1 transition" title="Marca-texto Verde">
+                      <span class="w-3.5 h-3.5 rounded-xs bg-emerald-200 border border-emerald-400 inline-block"></span> Verde
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'hiliteColor', '#fbcfe8')"
+                            class="px-2 h-7 rounded-lg hover:bg-slate-200/80 text-slate-800 text-[11px] font-semibold flex items-center gap-1 transition" title="Marca-texto Rosa">
+                      <span class="w-3.5 h-3.5 rounded-xs bg-pink-200 border border-pink-400 inline-block"></span> Rosa
+                    </button>
+
+                    <span class="w-px h-4 bg-slate-300 mx-1"></span>
+
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'foreColor', '#dc2626')"
+                            class="w-7 h-7 rounded-lg hover:bg-slate-200/80 text-red-600 font-bold text-xs flex items-center justify-center transition" title="Texto Vermelho">
+                      A
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'foreColor', '#2563eb')"
+                            class="w-7 h-7 rounded-lg hover:bg-slate-200/80 text-blue-600 font-bold text-xs flex items-center justify-center transition" title="Texto Azul">
+                      A
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'insertUnorderedList')"
+                            class="px-2 h-7 rounded-lg hover:bg-slate-200/80 text-slate-700 text-xs flex items-center justify-center transition" title="Lista com marcadores">
+                      • Lista
+                    </button>
+                    <button type="button" onmousedown="event.preventDefault(); formatarBizu('${e.id}', 'limpar')"
+                            class="px-2 h-7 rounded-lg hover:bg-slate-200/80 text-slate-500 text-[11px] flex items-center justify-center transition" title="Remover formatação do trecho selecionado">
+                      Limpar
+                    </button>
+                  </div>
+
+                  <!-- ÁREA EDITÁVEL -->
+                  <div id="bizu-editor-${e.id}"
+                       contenteditable="true"
+                       data-placeholder="Escreva aqui o gabarito, por que você errou e qual o macete / regra para acertar na próxima..."
+                       onkeydown="if((event.ctrlKey || event.metaKey) && event.key === 'Enter'){ event.preventDefault(); salvarBizuErro('${e.id}'); }"
+                       class="bizu-editor min-h-[76px] p-3 text-sm text-slate-800 outline-none leading-relaxed">${htmlBizu}</div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] text-slate-400">Dica: selecione um trecho e clique nos botões acima (ou use Ctrl+B, Ctrl+I, Ctrl+U)</span>
                   <button onclick="salvarBizuErro('${e.id}')" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">
                     Salvar Bizu
                   </button>
@@ -2468,14 +2563,13 @@ E) R$ 11.576,25`;
 
     function salvarBizuErro(id) {
       const erro = estado.errors.find(e => e.id === id);
-      const input = document.getElementById(`bizu-input-${id}`);
-      if (!erro || !input) return;
-      erro.notes = input.value.trim();
+      const editor = document.getElementById(`bizu-editor-${id}`);
+      if (!erro || !editor) return;
+      erro.notes = temTextoBizu(editor.innerHTML) ? editor.innerHTML.trim() : '';
       salvarEstado();
       renderCadernoErros();
       mostrarToast('Bizu salvo com sucesso!');
     }
-
     function alterarMotivoErro(id, reasonId) {
       const erro = estado.errors.find(e => e.id === id);
       if (!erro) return;
