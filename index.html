@@ -1126,17 +1126,22 @@
 
         todasLinhasConteudo.push(...bloco.linhas);
 
-        // Quebra alternativas que vieram na mesma linha (ex: (A) 10,25% (B) 20,5% (C) 10%...)
+        // Quebra alternativas na mesma linha (mesmo coladas ao enunciado ou sem espaço entre elas)
         const linhasExpandidas = [];
-        todasLinhasConteudo.forEach(linhaBruta => {
-          const temSequenciaInline = /^(?:\([A-D]\)|[A-D][).\-–—:])\s*.*(?:\([B-E]\)|\s[B-E][).\-–—:])/i.test(linhaBruta.trim());
-          if (temSequenciaInline) {
-            const quebrada = linhaBruta
-              .replace(/(^|\s)(\([A-E]\)|[A-E][).\-–—:])/gi, '\n$2')
+        todasLinhasConteudo.forEach(linhaOriginal => {
+          const linhaBruta = linhaOriginal.replace(/\u00A0/g, ' ');
+          const temParentesesInline = /\(\s*A\s*\)\s*[^(\n]+?\(\s*B\s*\)/i.test(linhaBruta);
+          const temLetraPontoInline = /(?:^|\s)A[).\-–—:]\s*\S+.*\sB[).\-–—:](?:\s|$)/i.test(linhaBruta);
+
+          if (temParentesesInline || temLetraPontoInline) {
+            const textoQuebrado = temParentesesInline
+              ? linhaBruta.replace(/(\(\s*[A-E]\s*\))/gi, '\n$1')
+              : linhaBruta.replace(/(^|\s)([A-E][).\-–—:])(?=\s|$)/gi, '\n$2');
+            const partes = textoQuebrado
               .split('\n')
               .map(s => s.trim())
               .filter(Boolean);
-            linhasExpandidas.push(...quebrada);
+            linhasExpandidas.push(...partes);
           } else {
             linhasExpandidas.push(linhaBruta);
           }
