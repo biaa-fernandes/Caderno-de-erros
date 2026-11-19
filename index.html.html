@@ -1,0 +1,3050 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caderno de Erros & Controle de Estudos</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            dark: {
+              bg: '#0d0f14',
+              surface: '#151821',
+              card: '#1b1f2b',
+              border: '#282e3e',
+              hover: '#232838'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.6);
+    }
+
+    /* Active Recall Blur Effect */
+    .answer-blurred {
+      filter: blur(7px);
+      user-select: none;
+      pointer-events: none;
+      transition: filter 0.25s ease;
+    }
+    .answer-revealed {
+      filter: blur(0);
+      user-select: text;
+      pointer-events: auto;
+      transition: filter 0.25s ease;
+    }
+
+    /* Rich Text Editor Styles */
+    .rich-editor {
+      min-height: 240px;
+      outline: none;
+    }
+    .rich-editor ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      margin: 0.5rem 0;
+    }
+    .rich-editor ol {
+      list-style-type: decimal;
+      padding-left: 1.5rem;
+      margin: 0.5rem 0;
+    }
+    .rich-editor table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.875rem;
+    }
+    .rich-editor th,
+    .rich-editor td {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .rich-editor th {
+      background-color: rgba(99, 102, 241, 0.12);
+      font-weight: 600;
+    }
+
+    /* Circular SVG Gauge Transition */
+    .gauge-ring {
+      transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white transition-colors duration-200">
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+  <div class="min-h-screen flex">
+    <!-- FIXED LEFT SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-dark-surface border-r border-slate-200 dark:border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col">
+      <!-- Brand Header -->
+      <div class="h-16 px-5 flex items-center justify-between border-b border-slate-200 dark:border-dark-border shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+            <i data-lucide="book-open-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm tracking-tight block leading-none">Caderno de Erros</span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Alta Performance</span>
+          </div>
+        </div>
+        <button onclick="toggleMobileSidebar(false)" class="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-dark-hover">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <button onclick="switchView('dashboard')" data-nav="dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
+          <span>Início (Painel Geral)</span>
+        </button>
+
+        <button onclick="switchView('syllabus')" data-nav="syllabus" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <i data-lucide="folder-kanban" class="w-4 h-4 shrink-0"></i>
+          <span>Matérias e Tópicos</span>
+        </button>
+
+        <div class="pt-3 pb-1 px-3.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Caderno de Erros</span>
+        </div>
+
+        <button onclick="switchView('register-error')" data-nav="register-error" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <i data-lucide="plus-circle" class="w-4 h-4 shrink-0 text-amber-500"></i>
+          <span>Registrar Erro</span>
+        </button>
+
+        <button onclick="switchView('my-errors')" data-nav="my-errors" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <div class="flex items-center gap-3">
+            <i data-lucide="book-x" class="w-4 h-4 shrink-0 text-rose-500"></i>
+            <span>Meus Erros</span>
+          </div>
+          <span id="sidebar-pending-badge" class="text-xs px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-500 font-semibold">0</span>
+        </button>
+
+        <div class="pt-3 pb-1 px-3.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Métricas & Gestão</span>
+        </div>
+
+        <button onclick="switchView('evolution')" data-nav="evolution" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <i data-lucide="trending-up" class="w-4 h-4 shrink-0 text-emerald-500"></i>
+          <span>Minha Evolução</span>
+        </button>
+
+        <button onclick="switchView('history')" data-nav="history" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <i data-lucide="history" class="w-4 h-4 shrink-0 text-blue-500"></i>
+          <span>Histórico de Estudo</span>
+        </button>
+
+        <button onclick="switchView('settings')" data-nav="settings" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+          <i data-lucide="settings" class="w-4 h-4 shrink-0"></i>
+          <span>Backup e Config.</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer: Quick QConcursos Link & Backup -->
+      <div class="p-3 border-t border-slate-200 dark:border-dark-border space-y-2 shrink-0">
+        <a href="https://www.qconcursos.com/questoes-de-concursos/questoes" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-dark-card hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-700 dark:text-slate-300 transition">
+          <span class="flex items-center gap-2">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-indigo-500"></i>
+            Abrir QConcursos
+          </span>
+          <span class="text-[10px] text-slate-400">↗</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex-1 lg:pl-64 flex flex-col min-w-0">
+      <!-- TOP STICKY HEADER (Stopwatch + Controls) -->
+      <header class="sticky top-0 z-20 h-16 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-slate-200 dark:border-dark-border px-4 sm:px-6 flex items-center justify-between gap-3">
+        <!-- Left: Hamburger & Page Title -->
+        <div class="flex items-center gap-3 min-w-0">
+          <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-hover">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 id="header-page-title" class="text-base sm:text-lg font-bold truncate">Início (Painel Geral)</h1>
+        </div>
+
+        <!-- Right: Study Stopwatch + Manual Log + Theme Toggle + Export -->
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <!-- Stopwatch Widget -->
+          <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-dark-card border border-slate-200 dark:border-dark-border px-2.5 sm:px-3 py-1.5 rounded-xl">
+            <span id="timer-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="timer-display" class="font-mono text-xs sm:text-sm font-bold tracking-wider text-slate-800 dark:text-slate-100">00:00:00</span>
+
+            <button id="timer-toggle-btn" onclick="toggleTimer()" title="Iniciar / Pausar Cronômetro" class="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">
+              <i id="timer-toggle-icon" data-lucide="play" class="w-3.5 h-3.5"></i>
+            </button>
+
+            <button onclick="openSessionModal(true)" title="Salvar Sessão Cronometrada" class="p-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-600 dark:text-emerald-400 transition">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            </button>
+
+            <button onclick="resetTimer()" title="Zerar Cronômetro" class="hidden sm:inline-flex p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-500 transition">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Manual Study Time Button -->
+          <button onclick="openSessionModal(false)" title="Registrar Tempo Manualmente" class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-card hover:bg-slate-200 dark:hover:bg-dark-hover border border-slate-200 dark:border-dark-border transition">
+            <i data-lucide="clock-plus" class="w-4 h-4 text-indigo-500"></i>
+            <span>+ Tempo</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button onclick="toggleTheme()" title="Alternar Tema Claro / Escuro" class="p-2 rounded-xl bg-slate-100 dark:bg-dark-card hover:bg-slate-200 dark:hover:bg-dark-hover border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300 transition">
+            <i id="theme-icon" data-lucide="sun" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Quick Export JSON -->
+          <button onclick="exportJSON()" title="Exportar Backup JSON" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Exportar</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- MAIN VIEW CONTAINER -->
+      <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- ========================================================= -->
+        <!-- 1. INÍCIO (PAINEL GERAL)                                  -->
+        <!-- ========================================================= -->
+        <section id="view-dashboard" class="view-section space-y-6">
+          <!-- Top Grid: Consistency Calendar + Spaced Repetition Summary -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Monthly Study Calendar & Streak (7 cols) -->
+            <div class="lg:col-span-7 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-500"></i>
+                  <h2 class="font-bold text-base">Dias de Estudo & Constância</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="changeCalendarMonth(-1)" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                  </button>
+                  <span id="calendar-month-label" class="text-sm font-semibold min-w-[120px] text-center capitalize">Novembro, 2026</span>
+                  <button onclick="changeCalendarMonth(1)" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                <!-- Calendar Grid -->
+                <div class="sm:col-span-7">
+                  <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 mb-2">
+                    <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+                  </div>
+                  <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 text-center text-xs">
+                    <!-- Populated via JS -->
+                  </div>
+                </div>
+
+                <!-- Streak Card -->
+                <div class="sm:col-span-5 bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                  <div class="w-11 h-11 rounded-full bg-amber-500/15 text-amber-500 flex items-center justify-center mb-2">
+                    <i data-lucide="flame" class="w-6 h-6"></i>
+                  </div>
+                  <div class="flex items-baseline gap-1">
+                    <span class="text-indigo-500 font-bold text-xl">#</span>
+                    <span id="dashboard-streak-count" class="text-3xl font-extrabold tracking-tight">0</span>
+                    <span class="text-sm font-medium text-slate-500 dark:text-slate-400">dias</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    "O superpoder de fazer um pouco todos os dias."
+                  </p>
+                  <button onclick="switchView('register-error')" class="mt-3 w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Registrar Erro Agora
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spaced Repetition / Review Priority Summary (5 cols) -->
+            <div class="lg:col-span-5 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="flag" class="w-5 h-5 text-rose-500"></i>
+                    <h2 class="font-bold text-base">Prioridade de Revisão</h2>
+                  </div>
+                  <span id="dashboard-total-errors-label" class="text-xs text-slate-500 dark:text-slate-400 font-medium">0 erros cadastrados</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Questões pendentes de revisão por nível de relevância:</p>
+
+                <div class="space-y-3" id="dashboard-priority-list">
+                  <!-- Populated via JS -->
+                </div>
+              </div>
+
+              <button onclick="switchView('my-errors')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover text-xs font-semibold flex items-center justify-center gap-2 transition">
+                <span>Ir para Caderno de Revisão</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Grid: Daily Goals + Quick Syllabus Overview -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Daily Study Goals (6 cols) -->
+            <div class="lg:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 shadow-xs">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="target" class="w-5 h-5 text-emerald-500"></i>
+                  <h2 class="font-bold text-base">Meta de Estudo do Dia</h2>
+                </div>
+                <button onclick="openGoalsModal()" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-dark-hover flex items-center gap-1 text-xs font-medium">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                  <span>Configurar</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Study Time Goal Gauge -->
+                <div class="bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border rounded-2xl p-4 flex flex-col items-center">
+                  <div class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-500"></i>
+                    <span>Tempo Estudado</span>
+                    <span id="goal-time-pct" class="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-500 font-bold">0%</span>
+                  </div>
+                  <div class="relative w-28 h-28 flex items-center justify-center">
+                    <svg class="w-28 h-28" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" stroke-width="9" fill="transparent" class="stroke-slate-200 dark:stroke-slate-700" />
+                      <circle id="goal-time-ring" cx="50" cy="50" r="40" stroke-width="9" fill="transparent" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="stroke-indigo-500 gauge-ring" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span id="goal-time-current" class="font-mono text-sm font-bold">00h 00m</span>
+                      <span id="goal-time-target" class="text-[10px] text-slate-400">Meta: 02h 00m</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Questions Solved Goal Gauge -->
+                <div class="bg-slate-50 dark:bg-dark-surface border border-slate-200/80 dark:border-dark-border rounded-2xl p-4 flex flex-col items-center">
+                  <div class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
+                    <i data-lucide="check-square" class="w-3.5 h-3.5 text-emerald-500"></i>
+                    <span>Questões Hoje</span>
+                    <span id="goal-questions-pct" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-bold">0%</span>
+                  </div>
+                  <div class="relative w-28 h-28 flex items-center justify-center">
+                    <svg class="w-28 h-28" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" stroke-width="9" fill="transparent" class="stroke-slate-200 dark:stroke-slate-700" />
+                      <circle id="goal-questions-ring" cx="50" cy="50" r="40" stroke-width="9" fill="transparent" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="stroke-emerald-500 gauge-ring" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span id="goal-questions-current" class="font-mono text-base font-bold">0</span>
+                      <span id="goal-questions-target" class="text-[10px] text-slate-400">Meta: 30</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Disciplines Performance Quick Summary (6 cols) -->
+            <div class="lg:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 shadow-xs flex flex-col">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>
+                  <h2 class="font-bold text-base">Desempenho por Disciplina</h2>
+                </div>
+                <button onclick="switchView('syllabus')" class="text-xs font-semibold text-indigo-500 hover:underline">Ver Edital Completo →</button>
+              </div>
+              <div id="dashboard-disciplines-summary" class="space-y-2.5 overflow-y-auto max-h-[210px] pr-1">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 2. MATÉRIAS E TÓPICOS (CONTEÚDO PROGRAMÁTICO)             -->
+        <!-- ========================================================= -->
+        <section id="view-syllabus" class="view-section hidden space-y-5">
+          <!-- Top Controls Bar -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input id="syllabus-search" type="text" oninput="renderSyllabus()" placeholder="Buscar disciplina ou tópico no edital..." class="w-full pl-10 pr-4 py-2 rounded-xl text-sm bg-slate-100 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="expandAllDisciplines(true)" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover transition">
+                Expandir Tudo
+              </button>
+              <button onclick="expandAllDisciplines(false)" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover transition">
+                Recolher Tudo
+              </button>
+              <button onclick="openDisciplineModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition">
+                <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                <span>+ Nova Disciplina</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Disciplines Accordion Container -->
+          <div id="syllabus-container" class="space-y-4">
+            <!-- Populated via JS -->
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 3A. REGISTRAR ERRO (FORMULÁRIO COMPLETO)                  -->
+        <!-- ========================================================= -->
+        <section id="view-register-error" class="view-section hidden max-w-4xl mx-auto">
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 sm:p-7 shadow-xs">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-dark-border pb-4 mb-6">
+              <div>
+                <h2 id="error-form-title" class="text-lg font-bold flex items-center gap-2">
+                  <i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i>
+                  <span>Registrar Nova Questão Errada</span>
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mapeie o motivo do erro e crie seu material de revisão ativa.</p>
+              </div>
+              <button id="cancel-edit-error-btn" onclick="resetErrorForm()" class="hidden px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover">
+                Cancelar Edição
+              </button>
+            </div>
+
+            <form id="error-form" onsubmit="handleSaveError(event)" class="space-y-5">
+              <input type="hidden" id="err-id" value="" />
+
+              <!-- Row 1: Discipline & Topic -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Disciplina *</label>
+                  <select id="err-discipline" required onchange="populateErrorTopicSelect()" class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Tópico do Edital *</label>
+                  <select id="err-topic" required class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row 2: Question Statement -->
+              <div>
+                <label class="block text-xs font-semibold mb-1.5">Enunciado da Questão *</label>
+                <textarea id="err-statement" rows="3" required placeholder="Cole ou resuma o enunciado da questão que você errou..." class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+              </div>
+
+              <!-- Row 3: Correct Answer & External Link -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Gabarito / Resposta Correta *</label>
+                  <input id="err-answer" type="text" required placeholder="Ex: Alternativa D) Afretamento por Tempo (TCP)" class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Link da Questão (QConcursos / Banca)</label>
+                  <input id="err-link" type="url" placeholder="https://www.qconcursos.com/questoes-de-concursos/..." class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+
+              <!-- Row 4: Date, Reason, Relevance, Status -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Data do Erro *</label>
+                  <input id="err-date" type="date" required class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-semibold">Motivo do Erro *</label>
+                    <button type="button" onclick="quickAddReasonPrompt()" class="text-[11px] font-semibold text-indigo-500 hover:underline">+ Novo</button>
+                  </div>
+                  <select id="err-reason" required class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Relevância *</label>
+                  <select id="err-relevance" required class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="Alta">🔴 Alta</option>
+                    <option value="Média">🟡 Média</option>
+                    <option value="Baixa">🟢 Baixa</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold mb-1.5">Status *</label>
+                  <select id="err-status" required class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="Pendente">Pendente de revisão</option>
+                    <option value="Superado">Superado ✅</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row 5: Detailed Error Notes -->
+              <div>
+                <label class="block text-xs font-semibold mb-1.5">Notas de Erro (Por que errei e o que revisar?) *</label>
+                <textarea id="err-notes" rows="4" required placeholder="Explique o raciocínio errado que você teve, a pegadinha da banca e a regra/conceito correto para não errar novamente..." class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+              </div>
+
+              <!-- Submit Actions -->
+              <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                <button type="button" onclick="resetErrorForm()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover transition">
+                  Limpar Campos
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 flex items-center gap-2 transition">
+                  <i data-lucide="save" class="w-4 h-4"></i>
+                  <span id="error-form-submit-text">Salvar no Caderno de Erros</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 3B. MEUS ERROS (CADERNO DE ERROS & REVISÃO ATIVA)         -->
+        <!-- ========================================================= -->
+        <section id="view-my-errors" class="view-section hidden space-y-5">
+          <!-- Search & Filter Bar -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4 space-y-3">
+            <div class="flex flex-col md:flex-row gap-3">
+              <!-- Keyword Search -->
+              <div class="relative flex-1">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input id="filter-search" type="text" oninput="renderMyErrors()" placeholder="Buscar por palavra-chave no enunciado, notas, gabarito ou tópico..." class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+
+              <button onclick="switchView('register-error')" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-2 shrink-0 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Novo Erro</span>
+              </button>
+            </div>
+
+            <!-- Combinable Filters -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <select id="filter-discipline" onchange="renderMyErrors()" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Todas as Disciplinas</option>
+              </select>
+
+              <select id="filter-reason" onchange="renderMyErrors()" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Todos os Motivos</option>
+              </select>
+
+              <select id="filter-relevance" onchange="renderMyErrors()" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Todas as Relevâncias</option>
+                <option value="Alta">🔴 Relevância Alta</option>
+                <option value="Média">🟡 Relevância Média</option>
+                <option value="Baixa">🟢 Relevância Baixa</option>
+              </select>
+
+              <select id="filter-status" onchange="renderMyErrors()" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Todos os Status</option>
+                <option value="Pendente">Pendente de Revisão</option>
+                <option value="Superado">Superado ✅</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
+              <span id="errors-results-count">Mostrando 0 questões</span>
+              <button onclick="clearErrorFilters()" class="text-indigo-500 hover:underline font-medium">Limpar filtros</button>
+            </div>
+          </div>
+
+          <!-- Error Cards List -->
+          <div id="my-errors-list" class="space-y-4">
+            <!-- Populated via JS -->
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 4. MINHA EVOLUÇÃO (ANÁLISE DE FOCO E GRÁFICOS)            -->
+        <!-- ========================================================= -->
+        <section id="view-evolution" class="view-section hidden space-y-6">
+          <!-- Top KPIs -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4">
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                <span>Tempo Total de Estudo</span>
+                <i data-lucide="clock" class="w-4 h-4 text-indigo-500"></i>
+              </div>
+              <div id="kpi-total-time" class="text-2xl font-extrabold font-mono">0h 00m</div>
+              <p class="text-[11px] text-slate-400 mt-1">Acumulado em sessões</p>
+            </div>
+
+            <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4">
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                <span>Questões Respondidas</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500"></i>
+              </div>
+              <div id="kpi-total-questions" class="text-2xl font-extrabold font-mono">0</div>
+              <p class="text-[11px] text-slate-400 mt-1">Total nos tópicos do edital</p>
+            </div>
+
+            <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4">
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                <span>Taxa de Acerto Geral</span>
+                <i data-lucide="target" class="w-4 h-4 text-emerald-500"></i>
+              </div>
+              <div id="kpi-accuracy-rate" class="text-2xl font-extrabold font-mono text-emerald-500">0%</div>
+              <p class="text-[11px] text-slate-400 mt-1">Média ponderada global</p>
+            </div>
+
+            <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-4">
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                <span>Erros: Registrados x Superados</span>
+                <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+              </div>
+              <div class="text-2xl font-extrabold font-mono">
+                <span id="kpi-errors-total">0</span>
+                <span class="text-sm font-normal text-slate-400">/</span>
+                <span id="kpi-errors-overcome" class="text-emerald-500">0</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Questões dominadas na revisão</p>
+            </div>
+          </div>
+
+          <!-- Charts Row 1: Temporal Evolution + Error Causes -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Line Chart: Registered vs Overcome over time -->
+            <div class="lg:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5">
+              <h3 class="font-bold text-sm mb-1">Registrados x Superados Acumulados</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Evolução da sua curva de aprendizado e superação de erros</p>
+              <div class="h-64 relative">
+                <canvas id="chart-evolution-line"></canvas>
+              </div>
+            </div>
+
+            <!-- Doughnut Chart + Main Cause Callout -->
+            <div class="lg:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <h3 class="font-bold text-sm mb-1">Origem dos Erros (Causas)</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Distribuição por motivo cadastrado</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                <div class="sm:col-span-5 h-48 relative flex items-center justify-center">
+                  <canvas id="chart-reasons-doughnut"></canvas>
+                </div>
+                <div class="sm:col-span-7 space-y-3">
+                  <!-- Main Cause Highlight Box -->
+                  <div class="bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border rounded-xl p-3.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Principal Causa</span>
+                    <div id="top-cause-title" class="text-base font-extrabold mt-0.5 flex items-center gap-2">
+                      <span>—</span>
+                    </div>
+                    <p id="top-cause-desc" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Cadastre erros para identificar seu maior ponto de atenção.
+                    </p>
+                  </div>
+                  <!-- Breakdown List -->
+                  <div id="reasons-breakdown-list" class="space-y-1.5 text-xs">
+                    <!-- Populated via JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 2: Accuracy per Discipline + Study Time per Discipline -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5">
+              <h3 class="font-bold text-sm mb-1">Taxa de Acerto por Disciplina (%)</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Percentual de aproveitamento em questões resolvidas</p>
+              <div class="h-72 relative">
+                <canvas id="chart-accuracy-bar"></canvas>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5">
+              <h3 class="font-bold text-sm mb-1">Tempo de Estudo por Disciplina (Horas)</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Distribuição da carga horária líquida estudada</p>
+              <div class="h-72 relative">
+                <canvas id="chart-time-bar"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 5. HISTÓRICO DE ESTUDO                                    -->
+        <!-- ========================================================= -->
+        <section id="view-history" class="view-section hidden space-y-5">
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="font-bold text-base">Registro de Sessões de Estudo</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Acompanhe cada bloco de estudo cronometrado ou adicionado manualmente.</p>
+            </div>
+            <button onclick="openSessionModal(false)" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 shrink-0 transition">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Registrar Sessão Manual</span>
+            </button>
+          </div>
+
+          <!-- Sessions Table -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-surface text-xs uppercase text-slate-500 dark:text-slate-400">
+                    <th class="py-3.5 px-4 font-semibold">Data</th>
+                    <th class="py-3.5 px-4 font-semibold">Disciplina</th>
+                    <th class="py-3.5 px-4 font-semibold">Tópico</th>
+                    <th class="py-3.5 px-4 font-semibold">Duração</th>
+                    <th class="py-3.5 px-4 font-semibold">Questões / Acertos</th>
+                    <th class="py-3.5 px-4 font-semibold text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body" class="divide-y divide-slate-200 dark:divide-dark-border">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 6. BACKUP E CONFIGURAÇÕES                                 -->
+        <!-- ========================================================= -->
+        <section id="view-settings" class="view-section hidden max-w-4xl mx-auto space-y-6">
+          <!-- Custom Error Reasons Management -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 sm:p-6">
+            <h2 class="font-bold text-base mb-1">Personalizar Motivos de Erro</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Crie tags específicas para classificar por que você erra cada questão.</p>
+
+            <form onsubmit="handleAddReason(event)" class="flex flex-col sm:flex-row gap-2.5 mb-5">
+              <input id="new-reason-emoji" type="text" maxlength="4" value="📌" class="w-16 text-center px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+              <input id="new-reason-label" type="text" required placeholder="Nome do motivo (ex: Falta de leitura da lei seca)" class="flex-1 px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input id="new-reason-color" type="color" value="#6366f1" class="w-12 h-10 p-1 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border cursor-pointer" />
+              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">
+                Adicionar Motivo
+              </button>
+            </form>
+
+            <div id="settings-reasons-list" class="flex flex-wrap gap-2">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- JSON Backup & Restore -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-5 sm:p-6 space-y-4">
+            <div>
+              <h2 class="font-bold text-base mb-1">Backup e Portabilidade (JSON / GitHub)</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Seus dados ficam salvos localmente no navegador. Exporte um arquivo JSON para guardar no seu computador ou versionar no seu repositório GitHub.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border flex flex-col justify-between gap-3">
+                <div>
+                  <h3 class="font-semibold text-sm flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4 text-indigo-500"></i>
+                    <span>Exportar Dados (.json)</span>
+                  </h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Baixa todo o edital, métricas, sessões, resumos e caderno de erros.</p>
+                </div>
+                <button onclick="exportJSON()" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">
+                  Baixar Backup JSON
+                </button>
+              </div>
+
+              <div class="p-4 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border flex flex-col justify-between gap-3">
+                <div>
+                  <h3 class="font-semibold text-sm flex items-center gap-2">
+                    <i data-lucide="upload" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Importar Backup (.json)</span>
+                  </h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Restaura seus dados a partir de um arquivo JSON exportado anteriormente.</p>
+                </div>
+                <label class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white text-center cursor-pointer transition">
+                  <span>Selecionar Arquivo JSON</span>
+                  <input type="file" accept=".json" onchange="importJSON(event)" class="hidden" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danger Zone / Reset -->
+          <div class="bg-white dark:bg-dark-card border border-rose-500/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="font-bold text-sm text-rose-500">Limpar Dados de Exemplo / Resetar</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Remove os 3 erros de exemplo e zera contadores mantendo todo o conteúdo programático do edital.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="clearDemoExamples()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 transition">
+                Limpar Exemplos
+              </button>
+              <button onclick="factoryResetApp()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-500 transition">
+                Restaurar Padrão Inicial
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- DRAWER: OBSERVAÇÕES / RESUMO DO TÓPICO (RICH TEXT EDITOR)             -->
+  <!-- ===================================================================== -->
+  <div id="topic-notes-backdrop" onclick="closeNotesDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 hidden"></div>
+  <div id="topic-notes-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-white dark:bg-dark-surface border-l border-slate-200 dark:border-dark-border shadow-2xl transform translate-x-full transition-transform duration-250 flex flex-col">
+    <!-- Drawer Header -->
+    <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <span id="notes-drawer-discipline" class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 block">Disciplina</span>
+        <h3 id="notes-drawer-topic" class="font-bold text-base truncate">Título do Tópico</h3>
+      </div>
+      <button onclick="closeNotesDrawer()" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-dark-hover">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Priority Color Tag Bar -->
+    <div class="px-5 py-3 bg-slate-50 dark:bg-dark-card border-b border-slate-200 dark:border-dark-border flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs font-semibold">Marcação do Tópico:</span>
+        <button type="button" onclick="setDrawerTagColor('red')" id="tag-btn-red" class="w-6 h-6 rounded-full bg-rose-500 border-2 border-transparent transition"></button>
+        <button type="button" onclick="setDrawerTagColor('yellow')" id="tag-btn-yellow" class="w-6 h-6 rounded-full bg-amber-400 border-2 border-transparent transition"></button>
+        <button type="button" onclick="setDrawerTagColor('green')" id="tag-btn-green" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-transparent transition"></button>
+        <span class="text-[11px] text-slate-400">Toque na cor de novo para tirar.</span>
+      </div>
+    </div>
+
+    <!-- Formatting Toolbar -->
+    <div class="px-5 py-2.5 border-b border-slate-200 dark:border-dark-border flex flex-wrap items-center gap-1.5 bg-white dark:bg-dark-surface">
+      <button type="button" onclick="execEditorCmd('bold')" title="Negrito" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover font-bold text-xs">B</button>
+      <button type="button" onclick="execEditorCmd('italic')" title="Itálico" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover italic text-xs">I</button>
+      <button type="button" onclick="execEditorCmd('underline')" title="Sublinhado" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover underline text-xs">U</button>
+      <button type="button" onclick="execEditorCmd('strikeThrough')" title="Tachado" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover line-through text-xs">S</button>
+      <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
+      <button type="button" onclick="execEditorCmd('foreColor', '#ef4444')" title="Texto Vermelho" class="px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover text-xs font-bold text-rose-500">A</button>
+      <button type="button" onclick="execEditorCmd('hiliteColor', '#fef08a')" title="Marca-texto Amarelo" class="px-2 py-1.5 rounded-lg bg-amber-200 text-slate-900 text-xs font-bold">ab</button>
+      <div class="h-4 w-px bg-slate-200 dark:bg-dark-border mx-1"></div>
+      <button type="button" onclick="execEditorCmd('insertUnorderedList')" title="Lista com marcadores" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover text-xs">• Lista</button>
+      <button type="button" onclick="execEditorCmd('insertOrderedList')" title="Lista numerada" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover text-xs">1. Lista</button>
+      <button type="button" onclick="insertComparisonTable()" title="Inserir Tabela Resumo" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 text-xs font-semibold flex items-center gap-1">
+        <i data-lucide="table" class="w-3.5 h-3.5"></i>
+        <span>+ Tabela</span>
+      </button>
+    </div>
+
+    <!-- ContentEditable Area -->
+    <div class="flex-1 overflow-y-auto p-5">
+      <div id="rich-editor-area" contenteditable="true" class="rich-editor w-full h-full p-4 rounded-xl bg-slate-50 dark:bg-dark-card border border-slate-200 dark:border-dark-border text-sm leading-relaxed"></div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-4 border-t border-slate-200 dark:border-dark-border flex items-center justify-between">
+      <button type="button" onclick="clearEditorArea()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition">
+        Limpar Resumo
+      </button>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="closeNotesDrawer()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-card hover:bg-slate-200 dark:hover:bg-dark-hover transition">
+          Cancelar
+        </button>
+        <button type="button" onclick="saveTopicNotes()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">
+          Salvar Observações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: REGISTRAR / SALVAR SESSÃO DE ESTUDO                            -->
+  <!-- ===================================================================== -->
+  <div id="session-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i data-lucide="clock" class="w-5 h-5 text-indigo-500"></i>
+          <span>Salvar Sessão de Estudo</span>
+        </h3>
+        <button onclick="closeSessionModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-hover">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveSession(event)" class="space-y-4">
+        <input type="hidden" id="session-from-timer" value="false" />
+
+        <div>
+          <label class="block text-xs font-semibold mb-1">Data *</label>
+          <input id="session-date" type="date" required class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold mb-1">Disciplina *</label>
+          <select id="session-discipline" required onchange="populateSessionTopicSelect()" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold mb-1">Tópico (Opcional)</label>
+          <select id="session-topic" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border"></select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Minutos *</label>
+            <input id="session-minutes" type="number" min="1" max="1440" required value="30" class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Questões</label>
+            <input id="session-questions" type="number" min="0" value="0" class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Acertos</label>
+            <input id="session-correct" type="number" min="0" value="0" class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeSessionModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">Salvar Sessão</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CONFIGURAR METAS DIÁRIAS                                       -->
+  <!-- ===================================================================== -->
+  <div id="goals-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+      <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+        <i data-lucide="target" class="w-5 h-5 text-emerald-500"></i>
+        <span>Metas Diárias de Estudo</span>
+      </h3>
+      <form onsubmit="handleSaveGoals(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Meta de Tempo Diário (minutos)</label>
+          <input id="input-goal-minutes" type="number" min="10" max="720" required class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+          <span class="text-[11px] text-slate-400">Ex: 120 min = 2 horas líquidas por dia</span>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Meta de Questões por Dia</label>
+          <input id="input-goal-questions" type="number" min="1" max="500" required class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeGoalsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white">Salvar Metas</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: ADICIONAR / EDITAR DISCIPLINA OU TÓPICO                        -->
+  <!-- ===================================================================== -->
+  <div id="syllabus-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <h3 id="syllabus-modal-title" class="font-bold text-base mb-4">Gerenciar Item do Edital</h3>
+      <form onsubmit="handleSaveSyllabusModal(event)" class="space-y-4">
+        <input type="hidden" id="syl-mode" value="" />
+        <input type="hidden" id="syl-disc-id" value="" />
+        <input type="hidden" id="syl-top-id" value="" />
+
+        <div>
+          <label class="block text-xs font-semibold mb-1">Nome *</label>
+          <input id="syl-name" type="text" required class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+        </div>
+
+        <div id="syl-category-group">
+          <label class="block text-xs font-semibold mb-1">Bloco / Categoria</label>
+          <input id="syl-category" type="text" placeholder="Ex: Conhecimentos Específicos" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+        </div>
+
+        <div id="syl-stats-group" class="hidden grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Total de Questões</label>
+            <input id="syl-questoes" type="number" min="0" value="0" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Acertos</label>
+            <input id="syl-acertos" type="number" min="0" value="0" class="w-full px-3.5 py-2 rounded-xl text-sm bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeSyllabusModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL DE CONFIRMAÇÃO CUSTOMIZADO (SUBSTITUI window.confirm)           -->
+  <!-- ===================================================================== -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+      <h3 id="confirm-title" class="font-bold text-base mb-2">Confirmar Ação</h3>
+      <p id="confirm-message" class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-5">Tem certeza?</p>
+      <div class="flex justify-end gap-2">
+        <button id="confirm-cancel-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover">Cancelar</button>
+        <button id="confirm-ok-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT APPLICATION LOGIC                                          -->
+  <!-- ===================================================================== -->
+  <script>
+    const STORAGE_KEY = 'cadernoErrosApp_edital_v1';
+    const TIMER_STORAGE_KEY = 'cadernoErrosTimer_v1';
+
+    // Helper: Get local YYYY-MM-DD with day offset
+    function getLocalDateStr(offsetDays = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return '—';
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function formatMinutes(totalMins) {
+      const hrs = Math.floor(totalMins / 60);
+      const mins = Math.round(totalMins % 60);
+      return `${String(hrs).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m`;
+    }
+
+    function generateId(prefix = 'id') {
+      return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    // =========================================================================
+    // DEFAULT FULL SYLLABUS + 3 REALISTIC EXAMPLES
+    // =========================================================================
+    function createInitialState() {
+      const today = getLocalDateStr(0);
+      const yesterday = getLocalDateStr(-1);
+      const twoDaysAgo = getLocalDateStr(-2);
+      const threeDaysAgo = getLocalDateStr(-3);
+
+      const disciplines = [
+        {
+          id: 'disc-lp',
+          name: 'Língua Portuguesa',
+          category: 'Conhecimentos Básicos',
+          color: '#3b82f6',
+          expanded: false,
+          topics: [
+            '1. Compreensão de textos',
+            '2. Ortografia oficial',
+            '3. Mecanismos de coesão textual',
+            '4. Significação das palavras',
+            '5. Emprego de tempos e modos verbais',
+            '6. Emprego das classes de palavras',
+            '7. Coordenação e de subordinação',
+            '8. Emprego dos sinais de pontuação',
+            '9. Concordância verbal e nominal',
+            '10. Regência verbal e nominal',
+            '11. Emprego do sinal indicativo de crase',
+            '12. Colocação dos pronomes átonos'
+          ].map((name, idx) => ({
+            id: `top-lp-${idx + 1}`,
+            name,
+            aula: idx < 4,
+            revisao: idx < 2,
+            questoes: idx === 10 ? 25 : (idx === 0 ? 30 : 0),
+            acertos: idx === 10 ? 19 : (idx === 0 ? 26 : 0),
+            lastStudy: idx === 10 ? yesterday : (idx === 0 ? twoDaysAgo : ''),
+            tagColor: idx === 10 ? 'yellow' : 'none',
+            notesHtml: idx === 10 ? '<p><b>Regra de Ouro da Crase:</b> Substitua a palavra feminina por uma masculina correspondente. Se aparecer <i>"ao"</i>, ocorre crase (<i>"à"</i>).</p>' : ''
+          }))
+        },
+        {
+          id: 'disc-en',
+          name: 'Língua Inglesa',
+          category: 'Conhecimentos Básicos',
+          color: '#06b6d4',
+          expanded: false,
+          topics: [
+            '1. Compreensão de texto escrito em língua inglesa',
+            '2. Itens gramaticais relevantes para a compreensão dos conteúdos semânticos'
+          ].map((name, idx) => ({
+            id: `top-en-${idx + 1}`,
+            name,
+            aula: idx === 0,
+            revisao: false,
+            questoes: idx === 0 ? 20 : 0,
+            acertos: idx === 0 ? 18 : 0,
+            lastStudy: idx === 0 ? threeDaysAgo : '',
+            tagColor: 'none',
+            notesHtml: ''
+          }))
+        },
+        {
+          id: 'disc-mat',
+          name: 'Matemática, Lógica e Estatística',
+          category: 'Conhecimentos Básicos / Quantitativos',
+          color: '#8b5cf6',
+          expanded: false,
+          topics: [
+            'Relações entre volume, pressão e temperatura',
+            'Lógica',
+            'Conjuntos',
+            'Relações',
+            'Funções',
+            'Logaritmos',
+            'Trigonometria',
+            'Cálculo vetorial e matricial',
+            'Análise combinatória',
+            'Progressões',
+            'Sistemas de numeração',
+            'Probabilidade',
+            'Estatística descritiva'
+          ].map((name, idx) => ({
+            id: `top-mat-${idx + 1}`,
+            name,
+            aula: idx === 1 || idx === 11,
+            revisao: false,
+            questoes: idx === 11 ? 15 : 0,
+            acertos: idx === 11 ? 11 : 0,
+            lastStudy: idx === 11 ? twoDaysAgo : '',
+            tagColor: 'none',
+            notesHtml: ''
+          }))
+        },
+        {
+          id: 'disc-eco',
+          name: 'Economia e Finanças',
+          category: 'Conhecimentos Específicos',
+          color: '#10b981',
+          expanded: false,
+          topics: [
+            'Matemática financeira',
+            'Métodos de avaliação econômica',
+            'VPL e TIR',
+            'Noções elementares de micro e macroeconomia'
+          ].map((name, idx) => ({
+            id: `top-eco-${idx + 1}`,
+            name,
+            aula: idx === 2,
+            revisao: idx === 2,
+            questoes: idx === 2 ? 18 : 0,
+            acertos: idx === 2 ? 15 : 0,
+            lastStudy: idx === 2 ? yesterday : '',
+            tagColor: idx === 2 ? 'green' : 'none',
+            notesHtml: ''
+          }))
+        },
+        {
+          id: 'disc-pet',
+          name: 'Petróleo, Gás e Energia',
+          category: 'Conhecimentos Específicos',
+          color: '#f59e0b',
+          expanded: false,
+          topics: [
+            'Principais características do petróleo e seus principais derivados (GLP, gasolina e óleo diesel)',
+            'Gás natural',
+            'Biocombustíveis',
+            'Sistemas de unidades e conversões',
+            'Noções básicas de termologia',
+            'Transporte Dutoviário',
+            'Lei nº 9.478/1997 e alterações',
+            'Portaria ANP nº 881/2022'
+          ].map((name, idx) => ({
+            id: `top-pet-${idx + 1}`,
+            name,
+            aula: idx === 0 || idx === 6,
+            revisao: false,
+            questoes: idx === 0 ? 22 : 0,
+            acertos: idx === 0 ? 19 : 0,
+            lastStudy: idx === 0 ? today : '',
+            tagColor: 'none',
+            notesHtml: ''
+          }))
+        },
+        {
+          id: 'disc-log',
+          name: 'Logística, Portos e Transporte Marítimo',
+          category: 'Conhecimentos Específicos',
+          color: '#ec4899',
+          expanded: true,
+          topics: [
+            'Noções elementares de marketing e logística',
+            'Serviços de apoio portuário e agentes marítimos',
+            'Mercado mundial de afretamentos: estrutura e funcionamento',
+            'Portos e terminais marítimos',
+            'Transporte marítimo de granéis líquidos',
+            'Transporte marítimo: navegação regular e navegação livre',
+            'Avarias marítimas'
+          ].map((name, idx) => ({
+            id: `top-log-${idx + 1}`,
+            name,
+            aula: idx === 2 || idx === 4,
+            revisao: idx === 2,
+            questoes: idx === 2 ? 32 : (idx === 4 ? 14 : 0),
+            acertos: idx === 2 ? 25 : (idx === 4 ? 12 : 0),
+            lastStudy: idx === 2 ? today : (idx === 4 ? yesterday : ''),
+            tagColor: idx === 2 ? 'red' : 'none',
+            notesHtml: idx === 2
+              ? '<table><thead><tr><th>Modalidade</th><th>Responsabilidade (Gestão Náutica x Comercial)</th></tr></thead><tbody><tr><td><b>Voyage Charter (VCP)</b></td><td>Fretador mantém gestão náutica e comercial. Frete por viagem/tonelada.</td></tr><tr><td><b>Time Charter (TCP)</b></td><td>Fretador mantém gestão náutica (tripulação); Afretador assume gestão comercial (bunkers/portos).</td></tr><tr><td><b>Bareboat (Casco Nu)</b></td><td>Afretador recebe o navio desarmado e assume gestão náutica e comercial.</td></tr></tbody></table>'
+              : ''
+          }))
+        },
+        {
+          id: 'disc-trib',
+          name: 'Legislação Tributária',
+          category: 'Conhecimentos Específicos',
+          color: '#6366f1',
+          expanded: false,
+          topics: [
+            'Tributos: conhecimentos básicos',
+            'IRPJ e CSLL',
+            'IRRF',
+            'ICMS',
+            'Participações governamentais',
+            'PIS/PASEP',
+            'COFINS',
+            'CIDE (Lei nº 10.336/2001 e Lei nº 10.636/2002)',
+            'Legislação do ISS',
+            'Contribuição Previdenciária (legislação, alíquotas, base de cálculo e apuração)',
+            'Emenda Constitucional nº 132/2023',
+            'Lei Complementar nº 214/2025'
+          ].map((name, idx) => ({
+            id: `top-trib-${idx + 1}`,
+            name,
+            aula: idx === 3 || idx === 7,
+            revisao: false,
+            questoes: idx === 7 ? 16 : 0,
+            acertos: idx === 7 ? 11 : 0,
+            lastStudy: idx === 7 ? yesterday : '',
+            tagColor: idx === 7 ? 'yellow' : 'none',
+            notesHtml: ''
+          }))
+        },
+        {
+          id: 'disc-cont',
+          name: 'Contratação e Licitações',
+          category: 'Conhecimentos Específicos',
+          color: '#14b8a6',
+          expanded: false,
+          topics: [
+            'Artigos 28 ao 91 da Lei nº 13.303/2016 (Estatuto Jurídico da empresa pública, da sociedade de economia mista e de suas subsidiárias)',
+            'Artigos 42 ao 49 da Lei Complementar nº 123/2006 e alterações da Lei Complementar nº 147/2014'
+          ].map((name, idx) => ({
+            id: `top-cont-${idx + 1}`,
+            name,
+            aula: idx === 0,
+            revisao: idx === 0,
+            questoes: idx === 0 ? 28 : 0,
+            acertos: idx === 0 ? 24 : 0,
+            lastStudy: idx === 0 ? twoDaysAgo : '',
+            tagColor: 'none',
+            notesHtml: ''
+          }))
+        }
+      ];
+
+      return {
+        theme: 'dark',
+        goals: {
+          dailyMinutes: 120,
+          dailyQuestions: 30
+        },
+        errorReasons: [
+          { id: 'desconhecimento', label: 'Desconhecimento', color: '#a855f7', emoji: '🧠' },
+          { id: 'confusao', label: 'Confusão conceitual', color: '#3b82f6', emoji: '🔀' },
+          { id: 'desatencao', label: 'Desatenção', color: '#f97316', emoji: '⚡' },
+          { id: 'esquecimento', label: 'Esquecimento', color: '#eab308', emoji: '💭' },
+          { id: 'interpretacao', label: 'Erro de interpretação', color: '#ec4899', emoji: '🔍' }
+        ],
+        disciplines,
+        errors: [
+          {
+            id: 'err-demo-1',
+            disciplineId: 'disc-log',
+            topicId: 'top-log-3',
+            statement: 'No mercado mundial de afretamentos marítimos, em qual modalidade o fretador entrega a embarcação armada e tripulada ao afretador por prazo determinado, permanecendo com a gestão náutica, enquanto os custos de combustível (bunkers) e taxas portuárias correm por conta do afretador?',
+            answer: 'Afretamento por Tempo (Time Charter Party - TCP).',
+            link: 'https://www.qconcursos.com/questoes-de-concursos/questoes',
+            date: today,
+            reasonId: 'confusao',
+            relevance: 'Alta',
+            status: 'Pendente',
+            notes: 'Troquei Time Charter (TCP) por Bareboat Charter (Casco Nu). Lembrete: no Casco Nu o navio vem DESARMADO e sem tripulação. No TCP a tripulação e manutenção do casco são do fretador, mas a operação comercial (rota, combustível, portos) é do afretador.'
+          },
+          {
+            id: 'err-demo-2',
+            disciplineId: 'disc-trib',
+            topicId: 'top-trib-8',
+            statement: 'Nos termos da Lei nº 10.336/2001, a CIDE-Combustíveis incide sobre a importação e a comercialização no mercado interno de gasolina, diesel, querosene de aviação, óleos combustíveis, GLP e álcool etílico combustível. Qual é a base de cálculo dessa contribuição?',
+            answer: 'A unidade de medida adotada na lei para os referidos produtos (alíquota específica / ad rem, ex: m³ ou tonelada), e NÃO o faturamento.',
+            link: 'https://www.qconcursos.com/questoes-de-concursos/questoes',
+            date: yesterday,
+            reasonId: 'desconhecimento',
+            relevance: 'Alta',
+            status: 'Pendente',
+            notes: 'A banca tentou induzir ao erro afirmando que a base de cálculo da CIDE-Combustíveis seria a receita bruta (ad valorem). Atenção: a CIDE-Combustíveis utiliza alíquota específica por unidade de volume/peso (m³ ou tonelada).'
+          },
+          {
+            id: 'err-demo-3',
+            disciplineId: 'disc-lp',
+            topicId: 'top-lp-11',
+            statement: 'Assinale a alternativa em que o emprego do sinal indicativo de crase está rigorosamente de acordo com a norma-padrão: "O navio atracou ___ distância de duzentos metros do píer principal."',
+            answer: 'à distância (com crase, pois a locução prepositiva feminina está determinada: "de duzentos metros").',
+            link: 'https://www.qconcursos.com/questoes-de-concursos/questoes',
+            date: twoDaysAgo,
+            reasonId: 'desatencao',
+            relevance: 'Média',
+            status: 'Superado',
+            notes: 'A expressão "à distância" SÓ leva crase quando vier especificada ("à distância de 200 metros"). Quando usada de forma indeterminada ("ensino a distância", "observava a distância"), não leva crase.'
+          }
+        ],
+        sessions: [
+          {
+            id: 'sess-demo-1',
+            date: today,
+            disciplineId: 'disc-log',
+            topicId: 'top-log-3',
+            durationMinutes: 75,
+            questionsCount: 18,
+            correctCount: 14
+          },
+          {
+            id: 'sess-demo-2',
+            date: yesterday,
+            disciplineId: 'disc-trib',
+            topicId: 'top-trib-8',
+            durationMinutes: 90,
+            questionsCount: 16,
+            correctCount: 11
+          },
+          {
+            id: 'sess-demo-3',
+            date: twoDaysAgo,
+            disciplineId: 'disc-lp',
+            topicId: 'top-lp-11',
+            durationMinutes: 60,
+            questionsCount: 25,
+            correctCount: 19
+          },
+          {
+            id: 'sess-demo-4',
+            date: threeDaysAgo,
+            disciplineId: 'disc-pet',
+            topicId: 'top-pet-1',
+            durationMinutes: 80,
+            questionsCount: 22,
+            correctCount: 19
+          }
+        ]
+      };
+    }
+
+    // =========================================================================
+    // GLOBAL APPLICATION STATE
+    // =========================================================================
+    let appState = loadState();
+    let currentView = 'dashboard';
+    let calendarViewDate = new Date();
+    let revealedErrorIds = new Set();
+    let activeNotesContext = { disciplineId: null, topicId: null, tagColor: 'none' };
+    let charts = {};
+
+    // Stopwatch State
+    let timerState = loadTimerState();
+    let timerInterval = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.disciplines)) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao ler localStorage:', e);
+      }
+      const initial = createInitialState();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+      return initial;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        updateSidebarBadge();
+      } catch (e) {
+        showToast('Erro ao salvar dados localmente.', 'error');
+      }
+    }
+
+    function loadTimerState() {
+      try {
+        const raw = localStorage.getItem(TIMER_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return { running: false, elapsedMs: 0, startTime: null };
+    }
+
+    function saveTimerState() {
+      localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(timerState));
+    }
+
+    // =========================================================================
+    // UI NOTIFICATIONS & CUSTOM CONFIRM MODAL (NO alert/confirm)
+    // =========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgClass =
+        type === 'error'
+          ? 'bg-rose-600 text-white'
+          : type === 'info'
+          ? 'bg-slate-800 text-white border border-slate-700'
+          : 'bg-emerald-600 text-white';
+
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2.5 transform transition-all duration-300 translate-y-2 opacity-0 ${bgClass}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function showConfirm(title, message, okLabel = 'Confirmar') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-message').textContent = message;
+        const okBtn = document.getElementById('confirm-ok-btn');
+        const cancelBtn = document.getElementById('confirm-cancel-btn');
+        okBtn.textContent = okLabel;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        const cleanup = (result) => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          okBtn.onclick = null;
+          cancelBtn.onclick = null;
+          resolve(result);
+        };
+
+        okBtn.onclick = () => cleanup(true);
+        cancelBtn.onclick = () => cleanup(false);
+      });
+    }
+
+    // =========================================================================
+    // THEME & NAVIGATION
+    // =========================================================================
+    function applyTheme() {
+      const html = document.documentElement;
+      const icon = document.getElementById('theme-icon');
+      if (appState.theme === 'dark') {
+        html.classList.add('dark');
+        icon.setAttribute('data-lucide', 'sun');
+      } else {
+        html.classList.remove('dark');
+        icon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+      if (currentView === 'evolution') {
+        renderEvolution();
+      }
+    }
+
+    function toggleTheme() {
+      appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+      saveState();
+      applyTheme();
+    }
+
+    function toggleMobileSidebar(open) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    const VIEW_TITLES = {
+      dashboard: 'Início (Painel Geral)',
+      syllabus: 'Matérias e Tópicos (Conteúdo Programático)',
+      'register-error': 'Registrar Questão Errada',
+      'my-errors': 'Meus Erros (Caderno de Revisão)',
+      evolution: 'Minha Evolução & Análise de Foco',
+      history: 'Histórico de Estudo',
+      settings: 'Backup e Configurações'
+    };
+
+    function switchView(viewId) {
+      currentView = viewId;
+      toggleMobileSidebar(false);
+
+      document.querySelectorAll('.view-section').forEach((sec) => sec.classList.add('hidden'));
+      const activeSec = document.getElementById(`view-${viewId}`);
+      if (activeSec) activeSec.classList.remove('hidden');
+
+      document.getElementById('header-page-title').textContent = VIEW_TITLES[viewId] || 'Caderno de Erros';
+
+      // Highlight Sidebar Item
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        const isTarget = btn.getAttribute('data-nav') === viewId;
+        if (isTarget) {
+          btn.className = 'nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white shadow-sm shadow-indigo-500/20 transition-all';
+        } else {
+          btn.className = 'nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-hover transition-all';
+        }
+      });
+
+      // Render view content
+      if (viewId === 'dashboard') renderDashboard();
+      if (viewId === 'syllabus') renderSyllabus();
+      if (viewId === 'register-error') prepareRegisterErrorView();
+      if (viewId === 'my-errors') renderMyErrors();
+      if (viewId === 'evolution') renderEvolution();
+      if (viewId === 'history') renderHistory();
+      if (viewId === 'settings') renderSettings();
+
+      lucide.createIcons();
+    }
+
+    function updateSidebarBadge() {
+      const pendingCount = appState.errors.filter((e) => e.status === 'Pendente').length;
+      document.getElementById('sidebar-pending-badge').textContent = pendingCount;
+    }
+
+    // =========================================================================
+    // STOPWATCH ENGINE
+    // =========================================================================
+    function getElapsedMs() {
+      if (timerState.running && timerState.startTime) {
+        return timerState.elapsedMs + (Date.now() - timerState.startTime);
+      }
+      return timerState.elapsedMs;
+    }
+
+    function updateTimerUI() {
+      const totalSec = Math.floor(getElapsedMs() / 1000);
+      const hrs = Math.floor(totalSec / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = totalSec % 60;
+      document.getElementById('timer-display').textContent =
+        `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      const dot = document.getElementById('timer-dot');
+      const icon = document.getElementById('timer-toggle-icon');
+      if (timerState.running) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        icon.setAttribute('data-lucide', 'pause');
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+        icon.setAttribute('data-lucide', 'play');
+      }
+      lucide.createIcons();
+    }
+
+    function toggleTimer() {
+      if (timerState.running) {
+        timerState.elapsedMs = getElapsedMs();
+        timerState.running = false;
+        timerState.startTime = null;
+        clearInterval(timerInterval);
+      } else {
+        timerState.running = true;
+        timerState.startTime = Date.now();
+        timerInterval = setInterval(updateTimerUI, 1000);
+      }
+      saveTimerState();
+      updateTimerUI();
+    }
+
+    function resetTimer() {
+      timerState = { running: false, elapsedMs: 0, startTime: null };
+      clearInterval(timerInterval);
+      saveTimerState();
+      updateTimerUI();
+    }
+
+    function initTimerOnLoad() {
+      if (timerState.running) {
+        timerInterval = setInterval(updateTimerUI, 1000);
+      }
+      updateTimerUI();
+    }
+
+    // =========================================================================
+    // STUDY SESSION MODAL (STOPWATCH OR MANUAL)
+    // =========================================================================
+    function openSessionModal(fromTimer = false) {
+      if (fromTimer && timerState.running) {
+        toggleTimer(); // Pause while saving
+      }
+
+      document.getElementById('session-from-timer').value = fromTimer ? 'true' : 'false';
+      document.getElementById('session-date').value = getLocalDateStr(0);
+
+      const discSelect = document.getElementById('session-discipline');
+      discSelect.innerHTML = appState.disciplines
+        .map((d) => `<option value="${d.id}">${d.name}</option>`)
+        .join('');
+      populateSessionTopicSelect();
+
+      const elapsedMins = Math.max(1, Math.round(getElapsedMs() / 60000));
+      document.getElementById('session-minutes').value = fromTimer ? elapsedMins : 45;
+      document.getElementById('session-questions').value = 0;
+      document.getElementById('session-correct').value = 0;
+
+      const modal = document.getElementById('session-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSessionModal() {
+      const modal = document.getElementById('session-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function populateSessionTopicSelect() {
+      const discId = document.getElementById('session-discipline').value;
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      const topSelect = document.getElementById('session-topic');
+      topSelect.innerHTML = `<option value="">-- Estudo Geral da Disciplina --</option>`;
+      if (disc) {
+        topSelect.innerHTML += disc.topics
+          .map((t) => `<option value="${t.id}">${t.name}</option>`)
+          .join('');
+      }
+    }
+
+    function handleSaveSession(e) {
+      e.preventDefault();
+      const fromTimer = document.getElementById('session-from-timer').value === 'true';
+      const date = document.getElementById('session-date').value;
+      const disciplineId = document.getElementById('session-discipline').value;
+      const topicId = document.getElementById('session-topic').value || null;
+      const durationMinutes = parseInt(document.getElementById('session-minutes').value, 10) || 0;
+      const questionsCount = parseInt(document.getElementById('session-questions').value, 10) || 0;
+      const correctCount = Math.min(questionsCount, parseInt(document.getElementById('session-correct').value, 10) || 0);
+
+      appState.sessions.unshift({
+        id: generateId('sess'),
+        date,
+        disciplineId,
+        topicId,
+        durationMinutes,
+        questionsCount,
+        correctCount
+      });
+
+      // Also update topic stats if selected
+      if (topicId) {
+        const disc = appState.disciplines.find((d) => d.id === disciplineId);
+        const top = disc?.topics.find((t) => t.id === topicId);
+        if (top) {
+          top.questoes += questionsCount;
+          top.acertos += correctCount;
+          top.lastStudy = date;
+        }
+      }
+
+      if (fromTimer) {
+        resetTimer();
+      }
+
+      saveState();
+      closeSessionModal();
+      showToast('Sessão de estudo registrada com sucesso!');
+      switchView(currentView);
+    }
+
+    // =========================================================================
+    // 1. DASHBOARD RENDERING
+    // =========================================================================
+    function renderDashboard() {
+      renderCalendar();
+      renderDailyGoals();
+      renderPrioritySummary();
+      renderDashboardDisciplines();
+    }
+
+    function changeCalendarMonth(delta) {
+      calendarViewDate.setMonth(calendarViewDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = calendarViewDate.getFullYear();
+      const month = calendarViewDate.getMonth();
+      const monthName = calendarViewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      document.getElementById('calendar-month-label').textContent = monthName;
+
+      // Active study dates set
+      const studiedDates = new Set();
+      appState.sessions.forEach((s) => studiedDates.add(s.date));
+      appState.errors.forEach((e) => studiedDates.add(e.date));
+
+      const firstDayWeekday = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayStr = getLocalDateStr(0);
+
+      const grid = document.getElementById('calendar-days-grid');
+      let html = '';
+
+      for (let i = 0; i < firstDayWeekday; i++) {
+        html += `<div class="h-8"></div>`;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isStudied = studiedDates.has(dateStr);
+        const isToday = dateStr === todayStr;
+
+        let cls = 'h-8 rounded-lg flex items-center justify-center font-semibold transition ';
+        if (isStudied) {
+          cls += 'bg-indigo-600 text-white shadow-xs';
+        } else if (isToday) {
+          cls += 'bg-amber-500/20 text-amber-500 border border-amber-500/40';
+        } else {
+          cls += 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-surface';
+        }
+
+        html += `<div class="${cls}" title="${isStudied ? 'Dia estudado!' : dateStr}">${day}</div>`;
+      }
+      grid.innerHTML = html;
+
+      // Calculate consecutive days (streak)
+      let streak = 0;
+      let checkOffset = 0;
+      if (!studiedDates.has(getLocalDateStr(0)) && studiedDates.has(getLocalDateStr(-1))) {
+        checkOffset = -1;
+      }
+      while (studiedDates.has(getLocalDateStr(checkOffset))) {
+        streak++;
+        checkOffset--;
+      }
+      document.getElementById('dashboard-streak-count').textContent = streak;
+    }
+
+    function renderDailyGoals() {
+      const today = getLocalDateStr(0);
+      const todaySessions = appState.sessions.filter((s) => s.date === today);
+      const todayMins = todaySessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+      const todayQuestions = todaySessions.reduce((acc, s) => acc + (s.questionsCount || 0), 0);
+
+      const targetMins = appState.goals.dailyMinutes || 120;
+      const targetQs = appState.goals.dailyQuestions || 30;
+
+      const timePct = Math.min(100, Math.round((todayMins / targetMins) * 100));
+      const qsPct = Math.min(100, Math.round((todayQuestions / targetQs) * 100));
+
+      document.getElementById('goal-time-pct').textContent = `${timePct}%`;
+      document.getElementById('goal-time-current').textContent = formatMinutes(todayMins);
+      document.getElementById('goal-time-target').textContent = `Meta: ${formatMinutes(targetMins)}`;
+      document.getElementById('goal-time-ring').style.strokeDashoffset = 251.2 - (251.2 * timePct) / 100;
+
+      document.getElementById('goal-questions-pct').textContent = `${qsPct}%`;
+      document.getElementById('goal-questions-current').textContent = todayQuestions;
+      document.getElementById('goal-questions-target').textContent = `Meta: ${targetQs}`;
+      document.getElementById('goal-questions-ring').style.strokeDashoffset = 251.2 - (251.2 * qsPct) / 100;
+    }
+
+    function openGoalsModal() {
+      document.getElementById('input-goal-minutes').value = appState.goals.dailyMinutes;
+      document.getElementById('input-goal-questions').value = appState.goals.dailyQuestions;
+      const modal = document.getElementById('goals-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGoalsModal() {
+      const modal = document.getElementById('goals-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleSaveGoals(e) {
+      e.preventDefault();
+      appState.goals.dailyMinutes = parseInt(document.getElementById('input-goal-minutes').value, 10) || 120;
+      appState.goals.dailyQuestions = parseInt(document.getElementById('input-goal-questions').value, 10) || 30;
+      saveState();
+      closeGoalsModal();
+      renderDailyGoals();
+      showToast('Metas diárias atualizadas!');
+    }
+
+    function renderPrioritySummary() {
+      const pendingErrors = appState.errors.filter((e) => e.status === 'Pendente');
+      const totalPending = pendingErrors.length;
+      document.getElementById('dashboard-total-errors-label').textContent = `${appState.errors.length} erros (${totalPending} pendentes)`;
+
+      const levels = [
+        { key: 'Alta', label: 'Prioridade Alta', color: 'rose', bg: 'bg-rose-500/10 border-rose-500/25 text-rose-500' },
+        { key: 'Média', label: 'Prioridade Média', color: 'amber', bg: 'bg-amber-500/10 border-amber-500/25 text-amber-500' },
+        { key: 'Baixa', label: 'Prioridade Baixa', color: 'emerald', bg: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500' }
+      ];
+
+      const list = document.getElementById('dashboard-priority-list');
+      list.innerHTML = levels
+        .map((lvl) => {
+          const count = pendingErrors.filter((e) => e.relevance === lvl.key).length;
+          const pct = totalPending > 0 ? Math.round((count / totalPending) * 100) : 0;
+          return `
+            <div onclick="jumpToFilteredErrors('${lvl.key}')" class="cursor-pointer p-3 rounded-xl border ${lvl.bg} flex items-center justify-between hover:opacity-90 transition">
+              <div>
+                <div class="font-bold text-xs">${lvl.label}</div>
+                <div class="text-[11px] opacity-80">${count} ${count === 1 ? 'questão pendente' : 'questões pendentes'}</div>
+              </div>
+              <div class="text-right">
+                <span class="font-mono font-extrabold text-sm">${pct}%</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    function jumpToFilteredErrors(relevance) {
+      switchView('my-errors');
+      document.getElementById('filter-relevance').value = relevance;
+      document.getElementById('filter-status').value = 'Pendente';
+      renderMyErrors();
+    }
+
+    function renderDashboardDisciplines() {
+      const container = document.getElementById('dashboard-disciplines-summary');
+      container.innerHTML = appState.disciplines
+        .map((d) => {
+          const qTotal = d.topics.reduce((acc, t) => acc + (t.questoes || 0), 0);
+          const aTotal = d.topics.reduce((acc, t) => acc + (t.acertos || 0), 0);
+          const pct = qTotal > 0 ? Math.round((aTotal / qTotal) * 100) : 0;
+          const barColor = qTotal === 0 ? 'bg-slate-400' : pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-rose-500';
+
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium truncate pr-2">${d.name}</span>
+                <span class="font-mono font-bold shrink-0">${qTotal > 0 ? pct + '%' : '—'}</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-dark-surface overflow-hidden">
+                <div class="h-full rounded-full ${barColor}" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // =========================================================================
+    // 2. MATÉRIAS E TÓPICOS (CONTEÚDO PROGRAMÁTICO)
+    // =========================================================================
+    function expandAllDisciplines(expand) {
+      appState.disciplines.forEach((d) => (d.expanded = expand));
+      saveState();
+      renderSyllabus();
+    }
+
+    function toggleDisciplineExpand(discId) {
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      if (disc) {
+        disc.expanded = !disc.expanded;
+        saveState();
+        renderSyllabus();
+      }
+    }
+
+    function renderSyllabus() {
+      const query = (document.getElementById('syllabus-search')?.value || '').toLowerCase().trim();
+      const container = document.getElementById('syllabus-container');
+
+      const filteredDisciplines = appState.disciplines
+        .map((disc) => {
+          const discMatches = disc.name.toLowerCase().includes(query);
+          const matchingTopics = discMatches
+            ? disc.topics
+            : disc.topics.filter((t) => t.name.toLowerCase().includes(query));
+          return { ...disc, visibleTopics: matchingTopics, matches: discMatches || matchingTopics.length > 0 };
+        })
+        .filter((d) => d.matches);
+
+      if (filteredDisciplines.length === 0) {
+        container.innerHTML = `<div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-8 text-center text-sm text-slate-500">Nenhuma matéria ou tópico encontrado para "${query}".</div>`;
+        return;
+      }
+
+      container.innerHTML = filteredDisciplines
+        .map((disc) => {
+          const totalQ = disc.topics.reduce((a, t) => a + (t.questoes || 0), 0);
+          const totalA = disc.topics.reduce((a, t) => a + (t.acertos || 0), 0);
+          const avgPct = totalQ > 0 ? Math.round((totalA / totalQ) * 100) : 0;
+          const isExpanded = query.length > 0 ? true : disc.expanded;
+
+          const rowsHtml = disc.visibleTopics
+            .map((top) => {
+              const erros = Math.max(0, (top.questoes || 0) - (top.acertos || 0));
+              const pct = top.questoes > 0 ? Math.round((top.acertos / top.questoes) * 100) : null;
+
+              let pctBadgeClass = 'bg-slate-200 dark:bg-dark-surface text-slate-500';
+              if (pct !== null) {
+                pctBadgeClass =
+                  pct >= 80
+                    ? 'bg-emerald-600 text-white'
+                    : pct >= 60
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-rose-600 text-white';
+              }
+
+              const stripColor =
+                top.tagColor === 'red'
+                  ? 'bg-rose-500'
+                  : top.tagColor === 'yellow'
+                  ? 'bg-amber-400'
+                  : top.tagColor === 'green'
+                  ? 'bg-emerald-500'
+                  : 'bg-slate-300 dark:bg-slate-700';
+
+              const hasNotes = top.notesHtml && top.notesHtml.replace(/<[^>]*>/g, '').trim().length > 0;
+
+              return `
+                <tr class="border-t border-slate-200/70 dark:border-dark-border hover:bg-slate-50/80 dark:hover:bg-dark-hover/50 transition">
+                  <td class="py-2.5 pl-3 pr-2 w-3">
+                    <button onclick="cycleTopicTagColor('${disc.id}', '${top.id}')" title="Clique para alternar cor de prioridade" class="w-2.5 h-8 rounded-full ${stripColor} block transition"></button>
+                  </td>
+                  <td class="py-2.5 px-2 min-w-[230px]">
+                    <div class="flex items-center gap-2">
+                      <button onclick="openNotesDrawer('${disc.id}', '${top.id}')" class="text-left text-xs sm:text-sm font-medium hover:text-indigo-500 transition leading-snug">
+                        ${top.name}
+                      </button>
+                      ${hasNotes ? '<span title="Possui resumo/anotações" class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>' : ''}
+                    </div>
+                  </td>
+                  <td class="py-2.5 px-2 text-center">
+                    <button onclick="toggleTopicFlag('${disc.id}', '${top.id}', 'aula')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                      top.aula
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 dark:bg-dark-surface text-slate-500 hover:bg-slate-200 dark:hover:bg-dark-hover'
+                    }">Aula</button>
+                  </td>
+                  <td class="py-2.5 px-2 text-center">
+                    <button onclick="toggleTopicFlag('${disc.id}', '${top.id}', 'revisao')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                      top.revisao
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 dark:bg-dark-surface text-slate-500 hover:bg-slate-200 dark:hover:bg-dark-hover'
+                    }">Revisão</button>
+                  </td>
+                  <td class="py-2.5 px-2 text-center font-mono text-xs font-semibold">${top.questoes}</td>
+                  <td class="py-2.5 px-2 text-center font-mono text-xs font-semibold text-emerald-500">${top.acertos}</td>
+                  <td class="py-2.5 px-2 text-center font-mono text-xs font-semibold text-rose-500">${erros}</td>
+                  <td class="py-2.5 px-2 text-center">
+                    <span class="inline-block min-w-[46px] py-1 px-2 rounded-lg font-mono text-xs font-bold ${pctBadgeClass}">
+                      ${pct !== null ? pct + '%' : '—'}
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-2 text-center text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    ${formatDisplayDate(top.lastStudy)}
+                  </td>
+                  <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1">
+                      <button onclick="quickLogTopicQuestion('${disc.id}', '${top.id}', true)" title="+1 Acerto" class="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 text-xs font-bold">+✓</button>
+                      <button onclick="quickLogTopicQuestion('${disc.id}', '${top.id}', false)" title="+1 Erro" class="px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 text-xs font-bold">+✕</button>
+                      <button onclick="openNotesDrawer('${disc.id}', '${top.id}')" title="Resumo / Observações" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-indigo-500">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="openTopicModal('${disc.id}', '${top.id}')" title="Editar Tópico" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-400">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="deleteTopic('${disc.id}', '${top.id}')" title="Excluir Tópico" class="p-1.5 rounded-lg hover:bg-rose-500/15 text-rose-500">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            })
+            .join('');
+
+          return `
+            <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl overflow-hidden shadow-xs">
+              <!-- Discipline Header -->
+              <div class="p-4 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-dark-surface/60">
+                <div onclick="toggleDisciplineExpand('${disc.id}')" class="flex items-center gap-3 cursor-pointer flex-1 min-w-[200px]">
+                  <span class="w-3 h-3 rounded-sm shrink-0" style="background-color: ${disc.color}"></span>
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h3 class="font-bold text-sm sm:text-base">${disc.name}</h3>
+                      <span class="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-indigo-500/15 text-indigo-500">${totalQ > 0 ? avgPct + '%' : '0%'}</span>
+                      <span class="text-[11px] text-slate-400">${disc.category || ''}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button onclick="openTopicModal('${disc.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-500 transition">
+                    + Tópico
+                  </button>
+                  <button onclick="openDisciplineModal('${disc.id}')" title="Editar Disciplina" class="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-dark-hover text-slate-400">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="deleteDiscipline('${disc.id}')" title="Excluir Disciplina" class="p-1.5 rounded-xl hover:bg-rose-500/15 text-rose-500">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="toggleDisciplineExpand('${disc.id}')" class="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-dark-hover">
+                    <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Topics Table -->
+              ${
+                isExpanded
+                  ? `<div class="overflow-x-auto">
+                      <table class="w-full text-left border-collapse">
+                        <thead>
+                          <tr class="border-t border-slate-200 dark:border-dark-border text-[11px] font-semibold uppercase text-slate-400">
+                            <th class="py-2 pl-3 pr-2"></th>
+                            <th class="py-2 px-2">Tópico</th>
+                            <th class="py-2 px-2 text-center">Aula</th>
+                            <th class="py-2 px-2 text-center">Revisão</th>
+                            <th class="py-2 px-2 text-center">Questões</th>
+                            <th class="py-2 px-2 text-center">Acertos</th>
+                            <th class="py-2 px-2 text-center">Erros</th>
+                            <th class="py-2 px-2 text-center">% Acerto</th>
+                            <th class="py-2 px-2 text-center">Último Estudo</th>
+                            <th class="py-2 px-3 text-right">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                      </table>
+                    </div>`
+                  : ''
+              }
+            </div>
+          `;
+        })
+        .join('');
+
+      lucide.createIcons();
+    }
+
+    function cycleTopicTagColor(discId, topId) {
+      const top = findTopic(discId, topId);
+      if (!top) return;
+      const order = ['none', 'red', 'yellow', 'green'];
+      const next = order[(order.indexOf(top.tagColor || 'none') + 1) % order.length];
+      top.tagColor = next;
+      saveState();
+      renderSyllabus();
+    }
+
+    function toggleTopicFlag(discId, topId, field) {
+      const top = findTopic(discId, topId);
+      if (!top) return;
+      top[field] = !top[field];
+      top.lastStudy = getLocalDateStr(0);
+      saveState();
+      renderSyllabus();
+    }
+
+    function quickLogTopicQuestion(discId, topId, isCorrect) {
+      const top = findTopic(discId, topId);
+      if (!top) return;
+      top.questoes = (top.questoes || 0) + 1;
+      if (isCorrect) top.acertos = (top.acertos || 0) + 1;
+      top.lastStudy = getLocalDateStr(0);
+      saveState();
+      renderSyllabus();
+      showToast(isCorrect ? '+1 Acerto registrado!' : '+1 Erro contabilizado no tópico!', isCorrect ? 'success' : 'info');
+    }
+
+    function findTopic(discId, topId) {
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      return disc?.topics.find((t) => t.id === topId);
+    }
+
+    // Add / Edit Discipline & Topic Modals
+    function openDisciplineModal(discId = '') {
+      const disc = discId ? appState.disciplines.find((d) => d.id === discId) : null;
+      document.getElementById('syllabus-modal-title').textContent = disc ? 'Editar Disciplina' : 'Nova Disciplina';
+      document.getElementById('syl-mode').value = disc ? 'edit-disc' : 'add-disc';
+      document.getElementById('syl-disc-id').value = discId;
+      document.getElementById('syl-top-id').value = '';
+      document.getElementById('syl-name').value = disc ? disc.name : '';
+      document.getElementById('syl-category').value = disc ? disc.category || '' : 'Conhecimentos Específicos';
+      document.getElementById('syl-category-group').classList.remove('hidden');
+      document.getElementById('syl-stats-group').classList.add('hidden');
+
+      const modal = document.getElementById('syllabus-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function openTopicModal(discId, topId = '') {
+      const top = topId ? findTopic(discId, topId) : null;
+      document.getElementById('syllabus-modal-title').textContent = top ? 'Editar Tópico' : 'Novo Tópico';
+      document.getElementById('syl-mode').value = top ? 'edit-top' : 'add-top';
+      document.getElementById('syl-disc-id').value = discId;
+      document.getElementById('syl-top-id').value = topId;
+      document.getElementById('syl-name').value = top ? top.name : '';
+      document.getElementById('syl-category-group').classList.add('hidden');
+      document.getElementById('syl-stats-group').classList.remove('hidden');
+      document.getElementById('syl-questoes').value = top ? top.questoes : 0;
+      document.getElementById('syl-acertos').value = top ? top.acertos : 0;
+
+      const modal = document.getElementById('syllabus-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSyllabusModal() {
+      const modal = document.getElementById('syllabus-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleSaveSyllabusModal(e) {
+      e.preventDefault();
+      const mode = document.getElementById('syl-mode').value;
+      const discId = document.getElementById('syl-disc-id').value;
+      const topId = document.getElementById('syl-top-id').value;
+      const name = document.getElementById('syl-name').value.trim();
+
+      if (mode === 'add-disc') {
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
+        appState.disciplines.push({
+          id: generateId('disc'),
+          name,
+          category: document.getElementById('syl-category').value.trim(),
+          color: colors[appState.disciplines.length % colors.length],
+          expanded: true,
+          topics: []
+        });
+        showToast('Disciplina adicionada!');
+      } else if (mode === 'edit-disc') {
+        const disc = appState.disciplines.find((d) => d.id === discId);
+        if (disc) {
+          disc.name = name;
+          disc.category = document.getElementById('syl-category').value.trim();
+        }
+        showToast('Disciplina atualizada!');
+      } else if (mode === 'add-top') {
+        const disc = appState.disciplines.find((d) => d.id === discId);
+        const q = parseInt(document.getElementById('syl-questoes').value, 10) || 0;
+        const a = Math.min(q, parseInt(document.getElementById('syl-acertos').value, 10) || 0);
+        if (disc) {
+          disc.expanded = true;
+          disc.topics.push({
+            id: generateId('top'),
+            name,
+            aula: false,
+            revisao: false,
+            questoes: q,
+            acertos: a,
+            lastStudy: q > 0 ? getLocalDateStr(0) : '',
+            tagColor: 'none',
+            notesHtml: ''
+          });
+        }
+        showToast('Tópico adicionado!');
+      } else if (mode === 'edit-top') {
+        const top = findTopic(discId, topId);
+        const q = parseInt(document.getElementById('syl-questoes').value, 10) || 0;
+        const a = Math.min(q, parseInt(document.getElementById('syl-acertos').value, 10) || 0);
+        if (top) {
+          top.name = name;
+          top.questoes = q;
+          top.acertos = a;
+        }
+        showToast('Tópico atualizado!');
+      }
+
+      saveState();
+      closeSyllabusModal();
+      renderSyllabus();
+    }
+
+    async function deleteDiscipline(discId) {
+      const ok = await showConfirm('Excluir Disciplina', 'Deseja excluir esta disciplina e todos os seus tópicos? Os erros vinculados permanecerão no histórico.', 'Excluir');
+      if (!ok) return;
+      appState.disciplines = appState.disciplines.filter((d) => d.id !== discId);
+      saveState();
+      renderSyllabus();
+      showToast('Disciplina excluída.', 'info');
+    }
+
+    async function deleteTopic(discId, topId) {
+      const ok = await showConfirm('Excluir Tópico', 'Tem certeza que deseja remover este tópico do conteúdo programático?', 'Excluir');
+      if (!ok) return;
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      if (disc) {
+        disc.topics = disc.topics.filter((t) => t.id !== topId);
+      }
+      saveState();
+      renderSyllabus();
+      showToast('Tópico removido.', 'info');
+    }
+
+    // =========================================================================
+    // RICH TEXT NOTES DRAWER PER TOPIC
+    // =========================================================================
+    function openNotesDrawer(discId, topId) {
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      const top = disc?.topics.find((t) => t.id === topId);
+      if (!disc || !top) return;
+
+      activeNotesContext = { disciplineId: discId, topicId: topId, tagColor: top.tagColor || 'none' };
+      document.getElementById('notes-drawer-discipline').textContent = disc.name;
+      document.getElementById('notes-drawer-topic').textContent = top.name;
+      document.getElementById('rich-editor-area').innerHTML = top.notesHtml || '';
+      updateDrawerTagButtons();
+
+      document.getElementById('topic-notes-backdrop').classList.remove('hidden');
+      document.getElementById('topic-notes-drawer').classList.remove('translate-x-full');
+    }
+
+    function closeNotesDrawer() {
+      document.getElementById('topic-notes-backdrop').classList.add('hidden');
+      document.getElementById('topic-notes-drawer').classList.add('translate-x-full');
+    }
+
+    function setDrawerTagColor(color) {
+      activeNotesContext.tagColor = activeNotesContext.tagColor === color ? 'none' : color;
+      updateDrawerTagButtons();
+    }
+
+    function updateDrawerTagButtons() {
+      ['red', 'yellow', 'green'].forEach((c) => {
+        const btn = document.getElementById(`tag-btn-${c}`);
+        if (activeNotesContext.tagColor === c) {
+          btn.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500', 'scale-110');
+        } else {
+          btn.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500', 'scale-110');
+        }
+      });
+    }
+
+    function execEditorCmd(command, value = null) {
+      document.getElementById('rich-editor-area').focus();
+      document.execCommand(command, false, value);
+    }
+
+    function insertComparisonTable() {
+      const editor = document.getElementById('rich-editor-area');
+      editor.focus();
+      const tableHtml = `
+        <table>
+          <thead>
+            <tr><th>Conceito / Tipo</th><th>Característica Principal</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Item 1</td><td>Descrição ou regra importante...</td></tr>
+            <tr><td>Item 2</td><td>Diferença chave cobrada em prova...</td></tr>
+          </tbody>
+        </table><p><br></p>
+      `;
+      document.execCommand('insertHTML', false, tableHtml);
+    }
+
+    function clearEditorArea() {
+      document.getElementById('rich-editor-area').innerHTML = '';
+    }
+
+    function saveTopicNotes() {
+      const top = findTopic(activeNotesContext.disciplineId, activeNotesContext.topicId);
+      if (top) {
+        top.notesHtml = document.getElementById('rich-editor-area').innerHTML;
+        top.tagColor = activeNotesContext.tagColor;
+        saveState();
+        renderSyllabus();
+        showToast('Resumo e observações salvos!');
+      }
+      closeNotesDrawer();
+    }
+
+    // =========================================================================
+    // 3A. REGISTRAR ERRO (FORM & EDITING)
+    // =========================================================================
+    function prepareRegisterErrorView(editErrorId = null) {
+      const discSelect = document.getElementById('err-discipline');
+      discSelect.innerHTML = appState.disciplines
+        .map((d) => `<option value="${d.id}">${d.name}</option>`)
+        .join('');
+
+      const reasonSelect = document.getElementById('err-reason');
+      reasonSelect.innerHTML = appState.errorReasons
+        .map((r) => `<option value="${r.id}">${r.emoji} ${r.label}</option>`)
+        .join('');
+
+      if (editErrorId) {
+        const err = appState.errors.find((e) => e.id === editErrorId);
+        if (!err) return;
+        document.getElementById('error-form-title').innerHTML = `<i data-lucide="pencil" class="w-5 h-5 text-indigo-500"></i><span>Editar Questão Registrada</span>`;
+        document.getElementById('error-form-submit-text').textContent = 'Atualizar Questão';
+        document.getElementById('cancel-edit-error-btn').classList.remove('hidden');
+
+        document.getElementById('err-id').value = err.id;
+        discSelect.value = err.disciplineId;
+        populateErrorTopicSelect();
+        document.getElementById('err-topic').value = err.topicId;
+        document.getElementById('err-statement').value = err.statement;
+        document.getElementById('err-answer').value = err.answer;
+        document.getElementById('err-link').value = err.link || '';
+        document.getElementById('err-date').value = err.date;
+        document.getElementById('err-reason').value = err.reasonId;
+        document.getElementById('err-relevance').value = err.relevance;
+        document.getElementById('err-status').value = err.status;
+        document.getElementById('err-notes').value = err.notes;
+      } else if (!document.getElementById('err-id').value) {
+        document.getElementById('error-form-title').innerHTML = `<i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i><span>Registrar Nova Questão Errada</span>`;
+        document.getElementById('error-form-submit-text').textContent = 'Salvar no Caderno de Erros';
+        document.getElementById('cancel-edit-error-btn').classList.add('hidden');
+        document.getElementById('err-date').value = getLocalDateStr(0);
+        populateErrorTopicSelect();
+      }
+      lucide.createIcons();
+    }
+
+    function populateErrorTopicSelect() {
+      const discId = document.getElementById('err-discipline').value;
+      const disc = appState.disciplines.find((d) => d.id === discId);
+      const topSelect = document.getElementById('err-topic');
+      if (disc && disc.topics.length > 0) {
+        topSelect.innerHTML = disc.topics
+          .map((t) => `<option value="${t.id}">${t.name}</option>`)
+          .join('');
+      } else {
+        topSelect.innerHTML = `<option value="">Tópico Geral</option>`;
+      }
+    }
+
+    function resetErrorForm() {
+      document.getElementById('error-form').reset();
+      document.getElementById('err-id').value = '';
+      document.getElementById('err-date').value = getLocalDateStr(0);
+      document.getElementById('error-form-title').innerHTML = `<i data-lucide="file-plus-2" class="w-5 h-5 text-amber-500"></i><span>Registrar Nova Questão Errada</span>`;
+      document.getElementById('error-form-submit-text').textContent = 'Salvar no Caderno de Erros';
+      document.getElementById('cancel-edit-error-btn').classList.add('hidden');
+      populateErrorTopicSelect();
+      lucide.createIcons();
+    }
+
+    function handleSaveError(e) {
+      e.preventDefault();
+      const existingId = document.getElementById('err-id').value;
+      const disciplineId = document.getElementById('err-discipline').value;
+      const topicId = document.getElementById('err-topic').value;
+      const statement = document.getElementById('err-statement').value.trim();
+      const answer = document.getElementById('err-answer').value.trim();
+      const link = document.getElementById('err-link').value.trim();
+      const date = document.getElementById('err-date').value;
+      const reasonId = document.getElementById('err-reason').value;
+      const relevance = document.getElementById('err-relevance').value;
+      const status = document.getElementById('err-status').value;
+      const notes = document.getElementById('err-notes').value.trim();
+
+      if (existingId) {
+        const idx = appState.errors.findIndex((item) => item.id === existingId);
+        if (idx !== -1) {
+          appState.errors[idx] = { id: existingId, disciplineId, topicId, statement, answer, link, date, reasonId, relevance, status, notes };
+        }
+        showToast('Questão atualizada com sucesso!');
+      } else {
+        appState.errors.unshift({
+          id: generateId('err'),
+          disciplineId,
+          topicId,
+          statement,
+          answer,
+          link,
+          date,
+          reasonId,
+          relevance,
+          status,
+          notes
+        });
+
+        // Increment question count on the topic automatically
+        const top = findTopic(disciplineId, topicId);
+        if (top) {
+          top.questoes = (top.questoes || 0) + 1;
+          top.lastStudy = date;
+        }
+        showToast('Questão adicionada ao Caderno de Erros!');
+      }
+
+      saveState();
+      resetErrorForm();
+      switchView('my-errors');
+    }
+
+    function quickAddReasonPrompt() {
+      switchView('settings');
+      document.getElementById('new-reason-label').focus();
+      showToast('Adicione seu motivo personalizado aqui!', 'info');
+    }
+
+    // =========================================================================
+    // 3B. MEUS ERROS (SEARCH, FILTERS & ACTIVE RECALL CARDS)
+    // =========================================================================
+    function populateMyErrorsFilters() {
+      const discFilter = document.getElementById('filter-discipline');
+      const currentDisc = discFilter.value;
+      discFilter.innerHTML = `<option value="all">Todas as Disciplinas</option>` +
+        appState.disciplines.map((d) => `<option value="${d.id}">${d.name}</option>`).join('');
+      if ([...discFilter.options].some((o) => o.value === currentDisc)) discFilter.value = currentDisc;
+
+      const reasonFilter = document.getElementById('filter-reason');
+      const currentReason = reasonFilter.value;
+      reasonFilter.innerHTML = `<option value="all">Todos os Motivos</option>` +
+        appState.errorReasons.map((r) => `<option value="${r.id}">${r.emoji} ${r.label}</option>`).join('');
+      if ([...reasonFilter.options].some((o) => o.value === currentReason)) reasonFilter.value = currentReason;
+    }
+
+    function clearErrorFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-discipline').value = 'all';
+      document.getElementById('filter-reason').value = 'all';
+      document.getElementById('filter-relevance').value = 'all';
+      document.getElementById('filter-status').value = 'all';
+      renderMyErrors();
+    }
+
+    function renderMyErrors() {
+      populateMyErrorsFilters();
+
+      const query = (document.getElementById('filter-search').value || '').toLowerCase().trim();
+      const discFilter = document.getElementById('filter-discipline').value;
+      const reasonFilter = document.getElementById('filter-reason').value;
+      const relFilter = document.getElementById('filter-relevance').value;
+      const statusFilter = document.getElementById('filter-status').value;
+
+      const filtered = appState.errors.filter((err) => {
+        if (discFilter !== 'all' && err.disciplineId !== discFilter) return false;
+        if (reasonFilter !== 'all' && err.reasonId !== reasonFilter) return false;
+        if (relFilter !== 'all' && err.relevance !== relFilter) return false;
+        if (statusFilter !== 'all' && err.status !== statusFilter) return false;
+
+        if (query) {
+          const disc = appState.disciplines.find((d) => d.id === err.disciplineId);
+          const top = disc?.topics.find((t) => t.id === err.topicId);
+          const haystack = `${err.statement} ${err.answer} ${err.notes} ${disc?.name || ''} ${top?.name || ''}`.toLowerCase();
+          if (!haystack.includes(query)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('errors-results-count').textContent =
+        `Mostrando ${filtered.length} de ${appState.errors.length} questões`;
+
+      const list = document.getElementById('my-errors-list');
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-10 text-center">
+            <i data-lucide="search-x" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
+            <h3 class="font-bold text-sm">Nenhuma questão encontrada</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tente ajustar os filtros ou registre uma nova questão errada.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      list.innerHTML = filtered
+        .map((err) => {
+          const disc = appState.disciplines.find((d) => d.id === err.disciplineId);
+          const top = disc?.topics.find((t) => t.id === err.topicId);
+          const reason = appState.errorReasons.find((r) => r.id === err.reasonId) || { emoji: '❓', label: 'Outro', color: '#64748b' };
+          const isRevealed = revealedErrorIds.has(err.id);
+          const isOvercome = err.status === 'Superado';
+
+          const borderLeftClass =
+            err.relevance === 'Alta'
+              ? 'border-l-4 border-l-rose-500'
+              : err.relevance === 'Média'
+              ? 'border-l-4 border-l-amber-400'
+              : 'border-l-4 border-l-emerald-500';
+
+          const relBadgeClass =
+            err.relevance === 'Alta'
+              ? 'bg-rose-500/15 text-rose-500 border-rose-500/30'
+              : err.relevance === 'Média'
+              ? 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+              : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30';
+
+          return `
+            <article class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border ${borderLeftClass} rounded-2xl p-5 shadow-xs space-y-4">
+              <!-- Breadcrumb & Status -->
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="text-slate-500 dark:text-slate-400 font-medium">
+                  <span class="font-semibold text-indigo-500">${disc ? disc.name : 'Disciplina'}</span>
+                  <span class="mx-1">›</span>
+                  <span>${top ? top.name : 'Tópico Geral'}</span>
+                  <span class="mx-1.5">•</span>
+                  <span>${formatDisplayDate(err.date)}</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  ${
+                    err.link
+                      ? `<a href="${err.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 font-semibold transition">
+                          <i data-lucide="external-link" class="w-3 h-3"></i>
+                          <span>QConcursos / Fonte</span>
+                        </a>`
+                      : ''
+                  }
+                  <button onclick="toggleErrorStatus('${err.id}')" class="px-2.5 py-1 rounded-lg font-semibold transition ${
+                    isOvercome
+                      ? 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25'
+                      : 'bg-slate-100 dark:bg-dark-surface text-slate-600 dark:text-slate-300 hover:bg-emerald-500/15 hover:text-emerald-500'
+                  }">
+                    ${isOvercome ? '✅ Superado' : 'Marcar como Superado'}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Question Statement -->
+              <p class="text-sm leading-relaxed font-medium">${err.statement}</p>
+
+              <!-- Active Recall Blurred Answer & Notes Box -->
+              <div class="relative rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-200 dark:border-dark-border p-4">
+                <div class="${isRevealed ? 'answer-revealed' : 'answer-blurred'} space-y-2.5">
+                  <div class="px-3 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold">
+                    Gabarito: ${err.answer}
+                  </div>
+                  <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <strong class="text-slate-800 dark:text-slate-100">Por que errei / O que revisar:</strong> ${err.notes}
+                  </div>
+                </div>
+
+                ${
+                  !isRevealed
+                    ? `<div class="absolute inset-0 flex items-center justify-center">
+                        <button onclick="toggleRevealError('${err.id}')" class="px-4 py-2 rounded-xl bg-slate-900 dark:bg-dark-card text-white border border-slate-700 text-xs font-bold shadow-lg hover:scale-105 transition flex items-center gap-2">
+                          <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
+                          <span>Mostrar Correção</span>
+                        </button>
+                      </div>`
+                    : ''
+                }
+              </div>
+
+              <!-- Card Footer: Reveal Toggle + Badges + Edit/Delete -->
+              <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  ${
+                    isRevealed
+                      ? `<button onclick="toggleRevealError('${err.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover text-xs font-semibold flex items-center gap-1.5 transition">
+                          <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                          <span>Ocultar Correção</span>
+                        </button>`
+                      : ''
+                  }
+
+                  <span class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${relBadgeClass}">
+                    Relevância ${err.relevance}
+                  </span>
+
+                  <span class="px-2.5 py-1 rounded-lg border text-xs font-semibold" style="background-color: ${reason.color}20; border-color: ${reason.color}50; color: ${reason.color}">
+                    ${reason.emoji} ${reason.label}
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button onclick="editErrorItem('${err.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-dark-surface hover:bg-slate-200 dark:hover:bg-dark-hover text-xs font-semibold flex items-center gap-1 transition">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button onclick="deleteErrorItem('${err.id}')" class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-semibold flex items-center gap-1 transition">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Excluir</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          `;
+        })
+        .join('');
+
+      lucide.createIcons();
+    }
+
+    function toggleRevealError(errId) {
+      if (revealedErrorIds.has(errId)) {
+        revealedErrorIds.delete(errId);
+      } else {
+        revealedErrorIds.add(errId);
+      }
+      renderMyErrors();
+    }
+
+    function toggleErrorStatus(errId) {
+      const err = appState.errors.find((e) => e.id === errId);
+      if (!err) return;
+      err.status = err.status === 'Pendente' ? 'Superado' : 'Pendente';
+      saveState();
+      renderMyErrors();
+      showToast(err.status === 'Superado' ? 'Questão marcada como Superada! 🎉' : 'Questão reaberta para revisão.', 'success');
+    }
+
+    function editErrorItem(errId) {
+      switchView('register-error');
+      prepareRegisterErrorView(errId);
+    }
+
+    async function deleteErrorItem(errId) {
+      const ok = await showConfirm('Excluir Questão', 'Deseja remover permanentemente esta questão do seu Caderno de Erros?', 'Excluir');
+      if (!ok) return;
+      appState.errors = appState.errors.filter((e) => e.id !== errId);
+      saveState();
+      renderMyErrors();
+      showToast('Questão excluída.', 'info');
+    }
+
+    // =========================================================================
+    // 4. MINHA EVOLUÇÃO (KPIs & CHART.JS ANALYTICS)
+    // =========================================================================
+    function renderEvolution() {
+      // KPIs
+      const totalMinutes = appState.sessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+      let totalQuestions = 0;
+      let totalCorrect = 0;
+      appState.disciplines.forEach((d) => {
+        d.topics.forEach((t) => {
+          totalQuestions += t.questoes || 0;
+          totalCorrect += t.acertos || 0;
+        });
+      });
+
+      const accuracyRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+      const totalErrors = appState.errors.length;
+      const overcomeErrors = appState.errors.filter((e) => e.status === 'Superado').length;
+
+      document.getElementById('kpi-total-time').textContent = formatMinutes(totalMinutes);
+      document.getElementById('kpi-total-questions').textContent = totalQuestions;
+      document.getElementById('kpi-accuracy-rate').textContent = `${accuracyRate}%`;
+      document.getElementById('kpi-errors-total').textContent = totalErrors;
+      document.getElementById('kpi-errors-overcome').textContent = overcomeErrors;
+
+      const isDark = appState.theme === 'dark';
+      const textColor = isDark ? '#94a3b8' : '#475569';
+      const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.25)';
+
+      // Destroy old charts before redraw
+      Object.values(charts).forEach((c) => c && c.destroy());
+      charts = {};
+
+      // 1. Line Chart: Accumulated Registered vs Overcome Errors by Date
+      const sortedErrors = [...appState.errors].sort((a, b) => a.date.localeCompare(b.date));
+      const uniqueDates = [...new Set(sortedErrors.map((e) => e.date))];
+      if (uniqueDates.length === 0) uniqueDates.push(getLocalDateStr(0));
+
+      let cumReg = 0;
+      let cumSup = 0;
+      const regSeries = [];
+      const supSeries = [];
+      uniqueDates.forEach((dt) => {
+        const dayErrs = sortedErrors.filter((e) => e.date === dt);
+        cumReg += dayErrs.length;
+        cumSup += dayErrs.filter((e) => e.status === 'Superado').length;
+        regSeries.push(cumReg);
+        supSeries.push(cumSup);
+      });
+
+      charts.line = new Chart(document.getElementById('chart-evolution-line'), {
+        type: 'line',
+        data: {
+          labels: uniqueDates.map(formatDisplayDate),
+          datasets: [
+            {
+              label: 'Registrados (acumulado)',
+              data: regSeries,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2.5
+            },
+            {
+              label: 'Superados (acumulado)',
+              data: supSeries,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2.5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+
+      // 2. Doughnut Chart: Error Causes + Main Cause Highlight
+      const reasonStats = appState.errorReasons
+        .map((r) => ({
+          ...r,
+          count: appState.errors.filter((e) => e.reasonId === r.id).length
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      const topCause = reasonStats[0];
+      if (topCause && topCause.count > 0) {
+        document.getElementById('top-cause-title').innerHTML = `<span>${topCause.emoji}</span><span>${topCause.label}</span>`;
+        document.getElementById('top-cause-desc').textContent =
+          `É a origem mais frequente (${topCause.count} ${topCause.count === 1 ? 'erro' : 'erros'}). Foque nela para evoluir mais rápido.`;
+      } else {
+        document.getElementById('top-cause-title').textContent = 'Sem registros ainda';
+        document.getElementById('top-cause-desc').textContent = 'Cadastre erros para identificar sua principal causa.';
+      }
+
+      document.getElementById('reasons-breakdown-list').innerHTML = reasonStats
+        .map((r) => {
+          const pct = totalErrors > 0 ? Math.round((r.count / totalErrors) * 100) : 0;
+          return `
+            <div class="flex items-center justify-between">
+              <span class="truncate pr-2">${r.emoji} ${r.label}</span>
+              <span class="font-mono font-bold shrink-0" style="color: ${r.color}">${r.count} • ${pct}%</span>
+            </div>
+          `;
+        })
+        .join('');
+
+      charts.doughnut = new Chart(document.getElementById('chart-reasons-doughnut'), {
+        type: 'doughnut',
+        data: {
+          labels: reasonStats.map((r) => r.label),
+          datasets: [
+            {
+              data: totalErrors > 0 ? reasonStats.map((r) => r.count) : [1],
+              backgroundColor: totalErrors > 0 ? reasonStats.map((r) => r.color) : ['#334155'],
+              borderWidth: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 3. Horizontal Bar Chart: Accuracy (%) per Discipline
+      const discLabels = appState.disciplines.map((d) => (d.name.length > 24 ? d.name.slice(0, 22) + '…' : d.name));
+      const discAccuracies = appState.disciplines.map((d) => {
+        const q = d.topics.reduce((a, t) => a + (t.questoes || 0), 0);
+        const c = d.topics.reduce((a, t) => a + (t.acertos || 0), 0);
+        return q > 0 ? Math.round((c / q) * 100) : 0;
+      });
+
+      charts.accuracyBar = new Chart(document.getElementById('chart-accuracy-bar'), {
+        type: 'bar',
+        data: {
+          labels: discLabels,
+          datasets: [
+            {
+              label: '% de Acerto',
+              data: discAccuracies,
+              backgroundColor: discAccuracies.map((v) => (v >= 80 ? '#10b981' : v >= 60 ? '#3b82f6' : '#f59e0b')),
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { max: 100, ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      // 4. Bar Chart: Study Time (Hours) per Discipline
+      const discHours = appState.disciplines.map((d) => {
+        const mins = appState.sessions
+          .filter((s) => s.disciplineId === d.id)
+          .reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+        return +(mins / 60).toFixed(2);
+      });
+
+      charts.timeBar = new Chart(document.getElementById('chart-time-bar'), {
+        type: 'bar',
+        data: {
+          labels: discLabels,
+          datasets: [
+            {
+              label: 'Horas Estudadas',
+              data: discHours,
+              backgroundColor: '#6366f1',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // 5. HISTÓRICO DE ESTUDO
+    // =========================================================================
+    function renderHistory() {
+      const tbody = document.getElementById('history-table-body');
+      if (appState.sessions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-500">Nenhuma sessão registrada ainda. Use o cronômetro acima ou registre manualmente!</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = appState.sessions
+        .map((s) => {
+          const disc = appState.disciplines.find((d) => d.id === s.disciplineId);
+          const top = disc?.topics.find((t) => t.id === s.topicId);
+          return `
+            <tr class="hover:bg-slate-50/70 dark:hover:bg-dark-hover/40 transition">
+              <td class="py-3 px-4 font-mono text-xs whitespace-nowrap">${formatDisplayDate(s.date)}</td>
+              <td class="py-3 px-4 font-semibold text-xs">${disc ? disc.name : 'Disciplina'}</td>
+              <td class="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">${top ? top.name : 'Estudo Geral'}</td>
+              <td class="py-3 px-4 font-mono text-xs font-bold text-indigo-500 whitespace-nowrap">${formatMinutes(s.durationMinutes)}</td>
+              <td class="py-3 px-4 font-mono text-xs whitespace-nowrap">
+                ${s.questionsCount > 0 ? `${s.correctCount}/${s.questionsCount} (${Math.round((s.correctCount / s.questionsCount) * 100)}%)` : '—'}
+              </td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="deleteSessionItem('${s.id}')" class="p-1.5 rounded-lg hover:bg-rose-500/15 text-rose-500 transition">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+
+      lucide.createIcons();
+    }
+
+    async function deleteSessionItem(sessionId) {
+      const ok = await showConfirm('Excluir Sessão', 'Deseja remover este registro do histórico de estudo?', 'Excluir');
+      if (!ok) return;
+      appState.sessions = appState.sessions.filter((s) => s.id !== sessionId);
+      saveState();
+      renderHistory();
+      showToast('Sessão removida.', 'info');
+    }
+
+    // =========================================================================
+    // 6. BACKUP & SETTINGS
+    // =========================================================================
+    function renderSettings() {
+      const list = document.getElementById('settings-reasons-list');
+      list.innerHTML = appState.errorReasons
+        .map(
+          (r) => `
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold" style="background-color: ${r.color}18; border-color: ${r.color}45; color: ${r.color}">
+            <span>${r.emoji} ${r.label}</span>
+            ${
+              appState.errorReasons.length > 1
+                ? `<button onclick="deleteReasonTag('${r.id}')" class="hover:opacity-75 ml-1">✕</button>`
+                : ''
+            }
+          </div>
+        `
+        )
+        .join('');
+    }
+
+    function handleAddReason(e) {
+      e.preventDefault();
+      const emoji = document.getElementById('new-reason-emoji').value.trim() || '📌';
+      const label = document.getElementById('new-reason-label').value.trim();
+      const color = document.getElementById('new-reason-color').value;
+      if (!label) return;
+
+      appState.errorReasons.push({
+        id: generateId('reason'),
+        label,
+        color,
+        emoji
+      });
+      document.getElementById('new-reason-label').value = '';
+      saveState();
+      renderSettings();
+      showToast('Motivo de erro criado!');
+    }
+
+    async function deleteReasonTag(reasonId) {
+      const ok = await showConfirm('Remover Motivo', 'Deseja excluir esta tag de motivo de erro?', 'Remover');
+      if (!ok) return;
+      appState.errorReasons = appState.errorReasons.filter((r) => r.id !== reasonId);
+      saveState();
+      renderSettings();
+      showToast('Motivo removido.', 'info');
+    }
+
+    function exportJSON() {
+      const dataStr = JSON.stringify(appState, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `caderno-de-erros-backup-${getLocalDateStr(0)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Backup JSON exportado com sucesso!');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed || !Array.isArray(parsed.disciplines) || !Array.isArray(parsed.errors)) {
+            throw new Error('Formato JSON inválido');
+          }
+          appState = parsed;
+          saveState();
+          applyTheme();
+          switchView('dashboard');
+          showToast('Backup restaurado com sucesso!');
+        } catch (err) {
+          showToast('Arquivo JSON inválido ou corrompido.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    async function clearDemoExamples() {
+      const ok = await showConfirm(
+        'Limpar Dados de Exemplo',
+        'Isso removerá as questões de exemplo e sessões iniciais, zerando os contadores dos tópicos mas mantendo todo o edital cadastrado. Continuar?',
+        'Limpar Exemplos'
+      );
+      if (!ok) return;
+
+      appState.errors = [];
+      appState.sessions = [];
+      appState.disciplines.forEach((d) => {
+        d.topics.forEach((t) => {
+          t.aula = false;
+          t.revisao = false;
+          t.questoes = 0;
+          t.acertos = 0;
+          t.lastStudy = '';
+          t.tagColor = 'none';
+          t.notesHtml = '';
+        });
+      });
+      saveState();
+      switchView('dashboard');
+      showToast('Exemplos limpos! Seu caderno está pronto para uso.');
+    }
+
+    async function factoryResetApp() {
+      const ok = await showConfirm(
+        'Restaurar Padrão Inicial',
+        'Todos os seus dados atuais serão substituídos pela configuração inicial com exemplos. Deseja prosseguir?',
+        'Restaurar'
+      );
+      if (!ok) return;
+
+      appState = createInitialState();
+      saveState();
+      applyTheme();
+      switchView('dashboard');
+      showToast('Aplicação restaurada ao padrão inicial.');
+    }
+
+    // =========================================================================
+    // INITIALIZE APPLICATION ON WINDOW LOAD
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      applyTheme();
+      updateSidebarBadge();
+      initTimerOnLoad();
+      switchView('dashboard');
+    });
+  </script>
+</body>
+</html>
