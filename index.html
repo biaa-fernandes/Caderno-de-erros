@@ -948,9 +948,10 @@
     }
 
     function getNomeDisciplina(discId) {
-      const d = getDisciplina(discId);
-      return d ? d.name : 'Geral';
-    }
+   if (discId === 'simulado-misto') return '🎯 Simulado (Várias Matérias)';
+   const d = getDisciplina(discId);
+   return d ? d.name : 'Geral';
+ }
 
     function getNomeTopico(discId, topicId, fallbackName = '') {
       if (fallbackName) return fallbackName;
@@ -1251,35 +1252,49 @@
     // CONTROLE DO SUB-MÓDULO DE IMPORTAÇÃO EM LOTE
     // =========================================================================
     function abrirImportadorLote() {
-      navegar('rodadas-guiadas');
-      rodadaAtivaId = null;
-      document.getElementById('rg-sub-lista').classList.add('hidden');
-      document.getElementById('rg-sub-resolver').classList.add('hidden');
-      document.getElementById('rg-sub-importar').classList.remove('hidden');
+   navegar('rodadas-guiadas');
+   rodadaAtivaId = null;
+   document.getElementById('rg-sub-lista').classList.add('hidden');
+   document.getElementById('rg-sub-resolver').classList.add('hidden');
+   document.getElementById('rg-sub-importar').classList.remove('hidden');
 
-      const selMat = document.getElementById('imp-materia');
-      selMat.innerHTML = estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('');
-      atualizarSubtopicosImportacao();
+   const selMat = document.getElementById('imp-materia');
+   selMat.innerHTML =
+     `<option value="simulado-misto">🎯 Simulado (Várias Matérias)</option>` +
+     estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('');
+   atualizarSubtopicosImportacao();
 
-      const inputTitulo = document.getElementById('imp-titulo');
-      if (!inputTitulo.value.trim()) {
-        const hoje = new Date();
-        const dd = String(hoje.getDate()).padStart(2, '0');
-        const mm = String(hoje.getMonth() + 1).padStart(2, '0');
-        inputTitulo.value = `Rodada ${dd}/${mm}`;
-      }
-      lucide.createIcons();
-    }
+   const inputTitulo = document.getElementById('imp-titulo');
+   if (!inputTitulo.value.trim()) {
+     const hoje = new Date();
+     const dd = String(hoje.getDate()).padStart(2, '0');
+     const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+     inputTitulo.value = `Rodada ${dd}/${mm}`;
+   }
+   lucide.createIcons();
+ }
 
-    function atualizarSubtopicosImportacao() {
-      const discId = document.getElementById('imp-materia').value;
-      const disc = getDisciplina(discId);
-      const selSub = document.getElementById('imp-subtopico-padrao');
-      const topics = disc ? disc.topics : [];
-      selSub.innerHTML = `<option value="">-- Geral / Sem subtópico fixo --</option>` +
-        topics.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
-    }
+ function atualizarSubtopicosImportacao() {
+   const discId = document.getElementById('imp-materia').value;
+   const selSub = document.getElementById('imp-subtopico-padrao');
 
+   if (discId === 'simulado-misto') {
+     selSub.innerHTML = `<option value="">-- Definido por questão (Simulado) --</option>`;
+     selSub.disabled = true;
+     selSub.classList.add('bg-slate-100', 'text-slate-400');
+   } else {
+     const disc = getDisciplina(discId);
+     const topics = disc ? disc.topics : [];
+     selSub.disabled = false;
+     selSub.classList.remove('bg-slate-100', 'text-slate-400');
+     selSub.innerHTML = `<option value="">-- Geral / Sem subtópico fixo --</option>` +
+       topics.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+   }
+
+   if (previewQuestoes.length) {
+     renderPreviewImportacao();
+   }
+ }
     function carregarExemploRodada() {
       const discMatFin = estado.disciplines.find(d => d.id === 'disc-eco' || d.name.toLowerCase().includes('financeira')) || estado.disciplines[0];
       if (discMatFin) {
@@ -1324,191 +1339,216 @@ E) R$ 11.576,25`;
     }
 
     function processarTextoRodada() {
-      const bruto = document.getElementById('imp-texto-bruto').value;
-      const discId = document.getElementById('imp-materia').value;
-      const topicPadrao = document.getElementById('imp-subtopico-padrao').value;
+   const bruto = document.getElementById('imp-texto-bruto').value;
+   const discId = document.getElementById('imp-materia').value;
+   const topicPadrao = document.getElementById('imp-subtopico-padrao').value;
 
-      if (!bruto.trim()) {
-        mostrarToast('Cole o texto das questões antes de processar.', 'aviso');
-        return;
-      }
+   if (!bruto.trim()) {
+     mostrarToast('Cole o texto das questões antes de processar.', 'aviso');
+     return;
+   }
 
-      previewQuestoes = parseTextoRodada(bruto, discId, topicPadrao);
-      if (!previewQuestoes.length) {
-        mostrarToast('Não foi possível identificar questões no texto colado.', 'erro');
-        return;
-      }
+   previewQuestoes = parseTextoRodada(bruto, discId, topicPadrao).map(q => ({
+     ...q,
+     disciplineId: discId === 'simulado-misto' ? '' : discId
+   }));
 
-      const inputTitulo = document.getElementById('imp-titulo');
-      if (inputTitulo.value && !/\d+q/i.test(inputTitulo.value)) {
-        inputTitulo.value = `${inputTitulo.value.trim()} – ${previewQuestoes.length}q`;
-      }
+   if (!previewQuestoes.length) {
+     mostrarToast('Não foi possível identificar questões no texto colado.', 'erro');
+     return;
+   }
 
-      document.getElementById('imp-preview-wrapper').classList.remove('hidden');
-      renderPreviewImportacao();
-      mostrarToast(`${previewQuestoes.length} questão(ões) separada(s) com sucesso!`);
-    }
+   const inputTitulo = document.getElementById('imp-titulo');
+   if (inputTitulo.value && !/\d+q/i.test(inputTitulo.value)) {
+     inputTitulo.value = `${inputTitulo.value.trim()} – ${previewQuestoes.length}q`;
+   }
 
-    function renderPreviewImportacao() {
-      const discId = document.getElementById('imp-materia').value;
-      const disc = getDisciplina(discId);
-      const topics = disc ? disc.topics : [];
+   document.getElementById('imp-preview-wrapper').classList.remove('hidden');
+   renderPreviewImportacao();
+   mostrarToast(`${previewQuestoes.length} questão(ões) separada(s) com sucesso!`);
+ }
 
-      document.getElementById('imp-count-badge').textContent = `${previewQuestoes.length} questão(ões)`;
-      const container = document.getElementById('imp-preview-lista');
+ function renderPreviewImportacao() {
+   const discIdRodada = document.getElementById('imp-materia').value;
+   const ehSimulado = discIdRodada === 'simulado-misto';
 
-      container.innerHTML = previewQuestoes.map((q, idx) => {
-        const linkFinal = gerarLinkQConcursos(q.codigo, q.urlPersonalizada);
-        return `
-          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3"
-               onmouseenter="hoveredPasteTarget={modo:'preview', index:${idx}}"
-               onmouseleave="if(hoveredPasteTarget && hoveredPasteTarget.index===${idx}) hoveredPasteTarget=null">
-            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">#${idx + 1}</span>
-                <input type="text" value="${escapeHtml(q.codigo)}" onchange="atualizarCampoPreview(${idx}, 'codigo', this.value)"
-                       placeholder="Código (ex: Q1922552)"
-                       class="w-32 px-2.5 py-1 text-xs font-mono font-semibold border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none" />
-                ${q.origemMeta ? `<span class="px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-lg">${escapeHtml(q.origemMeta)}</span>` : ''}
-                ${linkFinal ? `
-                  <a href="${escapeHtml(linkFinal)}" target="_blank" rel="noopener noreferrer"
-                     class="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 rounded-lg flex items-center gap-1">
-                    Testar Link QConcursos <i data-lucide="external-link" class="w-3 h-3"></i>
-                  </a>` : ''}
-              </div>
-              <button onclick="removerQuestaoPreview(${idx})" class="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remover
-              </button>
-            </div>
+   document.getElementById('imp-count-badge').textContent = `${previewQuestoes.length} questão(ões)`;
+   const container = document.getElementById('imp-preview-lista');
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Subtópico desta questão</label>
-                <select onchange="atualizarCampoPreview(${idx}, 'topicId', this.value)" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white">
-                  <option value="">-- Geral da matéria --</option>
-                  ${topics.map(t => `<option value="${escapeHtml(t.id)}" ${q.topicId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-500 mb-1">URL Personalizada QConcursos (opcional)</label>
-                <input type="url" value="${escapeHtml(q.urlPersonalizada)}" onchange="atualizarCampoPreview(${idx}, 'urlPersonalizada', this.value)"
-                       placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes/..."
-                       class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-indigo-500" />
-              </div>
-            </div>
+   container.innerHTML = previewQuestoes.map((q, idx) => {
+     const linkFinal = gerarLinkQConcursos(q.codigo, q.urlPersonalizada);
+     const qDiscId = ehSimulado ? (q.disciplineId || '') : discIdRodada;
+     const discQuestao = getDisciplina(qDiscId);
+     const topics = discQuestao ? discQuestao.topics : [];
 
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Enunciado extraído</label>
-              <textarea rows="3" onchange="atualizarCampoPreview(${idx}, 'enunciado', this.value)"
-                        class="w-full p-2.5 text-sm text-slate-800 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none">${escapeHtml(q.enunciado)}</textarea>
-            </div>
+     return `
+       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3"
+            onmouseenter="hoveredPasteTarget={modo:'preview', index:${idx}}"
+            onmouseleave="if(hoveredPasteTarget && hoveredPasteTarget.index===${idx}) hoveredPasteTarget=null">
+         <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+           <div class="flex flex-wrap items-center gap-2">
+             <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">#${idx + 1}</span>
+             <input type="text" value="${escapeHtml(q.codigo)}" onchange="atualizarCampoPreview(${idx}, 'codigo', this.value)"
+                    placeholder="Código (ex: Q1922552)"
+                    class="w-32 px-2.5 py-1 text-xs font-mono font-semibold border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none" />
+             ${q.origemMeta ? `<span class="px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-lg">${escapeHtml(q.origemMeta)}</span>` : ''}
+             ${linkFinal ? `
+               <a href="${escapeHtml(linkFinal)}" target="_blank" rel="noopener noreferrer"
+                  class="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 rounded-lg flex items-center gap-1">
+                 Testar Link QConcursos <i data-lucide="external-link" class="w-3 h-3"></i>
+               </a>` : ''}
+           </div>
+           <button onclick="removerQuestaoPreview(${idx})" class="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1">
+             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remover
+           </button>
+         </div>
 
-            ${q.alternativas.length ? `
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                ${q.alternativas.map((alt, aIdx) => `
-                  <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
-                    <span class="text-xs font-bold text-indigo-700">${escapeHtml(alt.letra)})</span>
-                    <input type="text" value="${escapeHtml(alt.texto)}" onchange="atualizarAlternativaPreview(${idx}, ${aIdx}, this.value)"
-                           class="w-full text-xs bg-transparent outline-none text-slate-700" />
-                  </div>
-                `).join('')}
-              </div>
-            ` : `<p class="text-xs text-slate-400 italic">Nenhuma alternativa A-E separada (questão aberta ou Certo/Errado).</p>`}
+         <div class="grid grid-cols-1 ${ehSimulado ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-3">
+           ${ehSimulado ? `
+             <div>
+               <label class="block text-[11px] font-semibold text-indigo-700 mb-1">Matéria desta questão *</label>
+               <select onchange="atualizarMateriaPreview(${idx}, this.value)" class="w-full px-3 py-1.5 text-xs font-medium border border-indigo-200 rounded-lg bg-indigo-50/40 text-slate-800">
+                 <option value="">-- Selecione a matéria --</option>
+                 ${estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}" ${qDiscId === d.id ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('')}
+               </select>
+             </div>
+           ` : ''}
+           <div>
+             <label class="block text-[11px] font-semibold text-slate-500 mb-1">Subtópico / Assunto desta questão</label>
+             <select onchange="atualizarCampoPreview(${idx}, 'topicId', this.value)" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white">
+               <option value="">${ehSimulado && !qDiscId ? '-- Escolha a matéria primeiro --' : '-- Geral da matéria --'}</option>
+               ${topics.map(t => `<option value="${escapeHtml(t.id)}" ${q.topicId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
+             </select>
+           </div>
+           <div>
+             <label class="block text-[11px] font-semibold text-slate-500 mb-1">URL Personalizada QConcursos (opcional)</label>
+             <input type="url" value="${escapeHtml(q.urlPersonalizada)}" onchange="atualizarCampoPreview(${idx}, 'urlPersonalizada', this.value)"
+                    placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes/..."
+                    class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-indigo-500" />
+           </div>
+         </div>
 
-            <!-- Suporte a Tabelas/Gráficos (Ctrl+V ou Observação) -->
-            <div class="pt-2 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-[11px] font-semibold text-slate-600 flex items-center gap-1">
-                    <i data-lucide="image-plus" class="w-3.5 h-3.5 text-indigo-600"></i> Print de Tabela / Gráfico
-                  </label>
-                  ${q.sugereImagem && !q.imagem ? `<span class="text-[10px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">⚠️ Enunciado cita quadro/gráfico</span>` : ''}
-                </div>
-                ${q.imagem ? `
-                  <div class="relative inline-block group">
-                    <img src="${q.imagem}" onclick="abrirZoomImagem('${q.imagem}')" class="max-h-36 rounded-xl border border-slate-300 cursor-zoom-in" />
-                    <button onclick="removerImagemPreview(${idx})" class="mt-1 text-xs text-rose-600 hover:underline flex items-center gap-1">
-                      <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Remover print
-                    </button>
-                  </div>
-                ` : `
-                  <div tabindex="0" onpaste="handlePasteEvento(event, 'preview', ${idx})"
-                       class="paste-zone border-2 border-dashed ${q.sugereImagem ? 'border-amber-400 bg-amber-50/40' : 'border-slate-300 bg-slate-50'} rounded-xl p-3 text-center cursor-pointer transition">
-                    <p class="text-xs text-slate-600 font-medium">Clique aqui e pressione <kbd class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold">Ctrl + V</kbd> para colar o print</p>
-                    <label class="mt-1 inline-block text-[11px] text-indigo-600 hover:underline cursor-pointer">
-                      ou selecionar arquivo de imagem
-                      <input type="file" accept="image/*" onchange="handleUploadImagem(event, 'preview', ${idx})" class="hidden" />
-                    </label>
-                  </div>
-                `}
-              </div>
+         <div>
+           <label class="block text-[11px] font-semibold text-slate-500 mb-1">Enunciado extraído</label>
+           <textarea rows="3" onchange="atualizarCampoPreview(${idx}, 'enunciado', this.value)"
+                     class="w-full p-2.5 text-sm text-slate-800 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none">${escapeHtml(q.enunciado)}</textarea>
+         </div>
 
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Observação / Dados da Tabela em Texto (opcional)</label>
-                <textarea rows="2" onchange="atualizarCampoPreview(${idx}, 'observacao', this.value)"
-                          placeholder="Ex: Trimestre 1: 2,5% | Trimestre 2: 2,32%..."
-                          class="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:border-indigo-500">${escapeHtml(q.observacao)}</textarea>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
+         ${q.alternativas.length ? `
+           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+             ${q.alternativas.map((alt, aIdx) => `
+               <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
+                 <span class="text-xs font-bold text-indigo-700">${escapeHtml(alt.letra)})</span>
+                 <input type="text" value="${escapeHtml(alt.texto)}" onchange="atualizarAlternativaPreview(${idx}, ${aIdx}, this.value)"
+                        class="w-full text-xs bg-transparent outline-none text-slate-700" />
+               </div>
+             `).join('')}
+           </div>
+         ` : `<p class="text-xs text-slate-400 italic">Nenhuma alternativa A-E separada (questão aberta ou Certo/Errado).</p>`}
 
-      lucide.createIcons();
-    }
+         <!-- Suporte a Tabelas/Gráficos (Ctrl+V ou Observação) -->
+         <div class="pt-2 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+           <div>
+             <div class="flex items-center justify-between mb-1">
+               <label class="text-[11px] font-semibold text-slate-600 flex items-center gap-1">
+                 <i data-lucide="image-plus" class="w-3.5 h-3.5 text-indigo-600"></i> Print de Tabela / Gráfico
+               </label>
+               ${q.sugereImagem && !q.imagem ? `<span class="text-[10px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">⚠️ Enunciado cita quadro/gráfico</span>` : ''}
+             </div>
+             ${q.imagem ? `
+               <div class="relative inline-block group">
+                 <img src="${q.imagem}" onclick="abrirZoomImagem('${q.imagem}')" class="max-h-36 rounded-xl border border-slate-300 cursor-zoom-in" />
+                 <button onclick="removerImagemPreview(${idx})" class="mt-1 text-xs text-rose-600 hover:underline flex items-center gap-1">
+                   <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Remover print
+                 </button>
+               </div>
+             ` : `
+               <div tabindex="0" onpaste="handlePasteEvento(event, 'preview', ${idx})"
+                    class="paste-zone border-2 border-dashed ${q.sugereImagem ? 'border-amber-400 bg-amber-50/40' : 'border-slate-300 bg-slate-50'} rounded-xl p-3 text-center cursor-pointer transition">
+                 <p class="text-xs text-slate-600 font-medium">Clique aqui e pressione <kbd class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold">Ctrl + V</kbd> para colar o print</p>
+                 <label class="mt-1 inline-block text-[11px] text-indigo-600 hover:underline cursor-pointer">
+                   ou selecionar arquivo de imagem
+                   <input type="file" accept="image/*" onchange="handleUploadImagem(event, 'preview', ${idx})" class="hidden" />
+                 </label>
+               </div>
+             `}
+           </div>
 
-    function atualizarCampoPreview(idx, campo, valor) {
-      if (!previewQuestoes[idx]) return;
-      previewQuestoes[idx][campo] = valor;
-      if (campo === 'codigo' || campo === 'urlPersonalizada') renderPreviewImportacao();
-    }
+           <div>
+             <label class="block text-[11px] font-semibold text-slate-600 mb-1">Observação / Dados da Tabela em Texto (opcional)</label>
+             <textarea rows="2" onchange="atualizarCampoPreview(${idx}, 'observacao', this.value)"
+                       placeholder="Ex: Trimestre 1: 2,5% | Trimestre 2: 2,32%..."
+                       class="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:border-indigo-500">${escapeHtml(q.observacao)}</textarea>
+           </div>
+         </div>
+       </div>
+     `;
+   }).join('');
 
-    function atualizarAlternativaPreview(qIdx, aIdx, valor) {
-      if (previewQuestoes[qIdx] && previewQuestoes[qIdx].alternativas[aIdx]) {
-        previewQuestoes[qIdx].alternativas[aIdx].texto = valor;
-      }
-    }
+   lucide.createIcons();
+ }
 
-    function removerQuestaoPreview(idx) {
-      previewQuestoes.splice(idx, 1);
-      renderPreviewImportacao();
-    }
+ function atualizarMateriaPreview(idx, discId) {
+   if (!previewQuestoes[idx]) return;
+   previewQuestoes[idx].disciplineId = discId;
+   previewQuestoes[idx].topicId = '';
+   renderPreviewImportacao();
+ }
 
-    function removerImagemPreview(idx) {
-      if (previewQuestoes[idx]) {
-        previewQuestoes[idx].imagem = '';
-        renderPreviewImportacao();
-      }
-    }
+ function atualizarCampoPreview(idx, campo, valor) {
+   if (!previewQuestoes[idx]) return;
+   previewQuestoes[idx][campo] = valor;
+   if (campo === 'codigo' || campo === 'urlPersonalizada') renderPreviewImportacao();
+ }
 
-    function adicionarQuestaoManualPreview() {
-      const topicPadrao = document.getElementById('imp-subtopico-padrao').value;
-      previewQuestoes.push({
-        id: gerarId('q'),
-        numero: previewQuestoes.length + 1,
-        codigo: '',
-        urlPersonalizada: '',
-        banca: '',
-        ano: '',
-        origemMeta: '',
-        enunciado: '',
-        alternativas: [
-          { letra: 'A', texto: '' },
-          { letra: 'B', texto: '' },
-          { letra: 'C', texto: '' },
-          { letra: 'D', texto: '' },
-          { letra: 'E', texto: '' }
-        ],
-        topicId: topicPadrao || '',
-        imagem: '',
-        observacao: '',
-        sugereImagem: false,
-        status: '',
-        riscadas: []
-      });
-      document.getElementById('imp-preview-wrapper').classList.remove('hidden');
-      renderPreviewImportacao();
-    }
+ function atualizarAlternativaPreview(qIdx, aIdx, valor) {
+   if (previewQuestoes[qIdx] && previewQuestoes[qIdx].alternativas[aIdx]) {
+     previewQuestoes[qIdx].alternativas[aIdx].texto = valor;
+   }
+ }
+
+ function removerQuestaoPreview(idx) {
+   previewQuestoes.splice(idx, 1);
+   renderPreviewImportacao();
+ }
+
+ function removerImagemPreview(idx) {
+   if (previewQuestoes[idx]) {
+     previewQuestoes[idx].imagem = '';
+     renderPreviewImportacao();
+   }
+ }
+
+ function adicionarQuestaoManualPreview() {
+   const discIdRodada = document.getElementById('imp-materia').value;
+   const topicPadrao = document.getElementById('imp-subtopico-padrao').value;
+   previewQuestoes.push({
+     id: gerarId('q'),
+     numero: previewQuestoes.length + 1,
+     codigo: '',
+     urlPersonalizada: '',
+     banca: '',
+     ano: '',
+     origemMeta: '',
+     enunciado: '',
+     alternativas: [
+       { letra: 'A', texto: '' },
+       { letra: 'B', texto: '' },
+       { letra: 'C', texto: '' },
+       { letra: 'D', texto: '' },
+       { letra: 'E', texto: '' }
+     ],
+     disciplineId: discIdRodada === 'simulado-misto' ? '' : discIdRodada,
+     topicId: topicPadrao || '',
+     imagem: '',
+     observacao: '',
+     sugereImagem: false,
+     status: '',
+     riscadas: []
+   });
+   document.getElementById('imp-preview-wrapper').classList.remove('hidden');
+   renderPreviewImportacao();
+ }
 
     function salvarEIniciarPapelCaneta() {
       if (!previewQuestoes.length) {
@@ -1915,226 +1955,258 @@ E) R$ 11.576,25`;
     }
 
     function renderQuestoesResolucao() {
-      const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
-      if (!rodada) return;
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada) return;
 
-      const disc = getDisciplina(rodada.disciplineId);
-      const topics = disc ? disc.topics : [];
-      const classeFonte = fonteResolucao === 'lg' ? 'enunciado-lg' : fonteResolucao === 'sm' ? 'enunciado-sm' : 'enunciado-md';
+   const ehSimulado = rodada.disciplineId === 'simulado-misto';
+   const classeFonte = fonteResolucao === 'lg' ? 'enunciado-lg' : fonteResolucao === 'sm' ? 'enunciado-sm' : 'enunciado-md';
 
-      const questoesFiltradas = rodada.questoes
-        .map((q, idxOriginal) => ({ q, idxOriginal }))
-        .filter(({ q }) => {
-          if (filtroResolucaoAtual === 'todas') return true;
-          if (filtroResolucaoAtual === 'pendentes') return !q.status;
-          return q.status === filtroResolucaoAtual;
-        });
+   const questoesFiltradas = rodada.questoes
+     .map((q, idxOriginal) => ({ q, idxOriginal }))
+     .filter(({ q }) => {
+       if (filtroResolucaoAtual === 'todas') return true;
+       if (filtroResolucaoAtual === 'pendentes') return !q.status;
+       return q.status === filtroResolucaoAtual;
+     });
 
-      const container = document.getElementById('res-questoes-lista');
-      if (!questoesFiltradas.length) {
-        container.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-500">Nenhuma questão neste filtro.</div>`;
-        return;
-      }
+   const container = document.getElementById('res-questoes-lista');
+   if (!questoesFiltradas.length) {
+     container.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-500">Nenhuma questão neste filtro.</div>`;
+     return;
+   }
 
-      container.innerHTML = questoesFiltradas.map(({ q, idxOriginal }) => {
-        const linkQC = gerarLinkQConcursos(q.codigo, q.urlPersonalizada);
-        const nomeTopico = q.topicId ? getNomeTopico(rodada.disciplineId, q.topicId) : '';
-        const bordaStatus = q.status === 'acertei'
-          ? 'border-emerald-300 ring-1 ring-emerald-100'
-          : q.status === 'duvida'
-            ? 'border-amber-300 ring-1 ring-amber-100'
-            : q.status === 'errei'
-              ? 'border-rose-300 ring-1 ring-rose-100'
-              : 'border-slate-200';
+   container.innerHTML = questoesFiltradas.map(({ q, idxOriginal }) => {
+     const linkQC = gerarLinkQConcursos(q.codigo, q.urlPersonalizada);
+     const qDiscId = ehSimulado ? (q.disciplineId || '') : rodada.disciplineId;
+     const discQuestao = getDisciplina(qDiscId);
+     const topics = discQuestao ? discQuestao.topics : [];
+     const nomeDiscQ = qDiscId ? getNomeDisciplina(qDiscId) : '';
+     const nomeTopico = q.topicId && qDiscId ? getNomeTopico(qDiscId, q.topicId) : '';
 
-        return `
-          <article class="bg-white rounded-2xl border ${bordaStatus} shadow-sm overflow-hidden transition"
-                   onmouseenter="hoveredPasteTarget={modo:'resolucao', index:${idxOriginal}}"
-                   onmouseleave="if(hoveredPasteTarget && hoveredPasteTarget.index===${idxOriginal}) hoveredPasteTarget=null">
-            <div class="grid grid-cols-1 lg:grid-cols-12">
+     const bordaStatus = q.status === 'acertei'
+       ? 'border-emerald-300 ring-1 ring-emerald-100'
+       : q.status === 'duvida'
+         ? 'border-amber-300 ring-1 ring-amber-100'
+         : q.status === 'errei'
+           ? 'border-rose-300 ring-1 ring-rose-100'
+           : 'border-slate-200';
 
-              <!-- LEITURA LIMPA (PAPEL & CANETA) -->
-              <div class="lg:col-span-8 p-5 sm:p-6 space-y-4">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold">Questão ${q.numero}</span>
-                    ${q.codigo ? `<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono text-xs font-semibold">${escapeHtml(q.codigo)}</span>` : ''}
-                    ${q.origemMeta ? `<span class="text-xs font-medium text-slate-500">${escapeHtml(q.origemMeta)}</span>` : ''}
-                  </div>
-                  ${nomeTopico ? `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium max-w-xs truncate" title="${escapeHtml(nomeTopico)}">${escapeHtml(nomeTopico)}</span>` : ''}
-                </div>
+     return `
+       <article class="bg-white rounded-2xl border ${bordaStatus} shadow-sm overflow-hidden transition"
+                onmouseenter="hoveredPasteTarget={modo:'resolucao', index:${idxOriginal}}"
+                onmouseleave="if(hoveredPasteTarget && hoveredPasteTarget.index===${idxOriginal}) hoveredPasteTarget=null">
+         <div class="grid grid-cols-1 lg:grid-cols-12">
 
-                <div class="text-slate-800 whitespace-pre-line ${classeFonte}">
-                  ${escapeHtml(q.enunciado)}
-                </div>
+           <!-- LEITURA LIMPA (PAPEL & CANETA) -->
+           <div class="lg:col-span-8 p-5 sm:p-6 space-y-4">
+             <div class="flex flex-wrap items-center justify-between gap-2">
+               <div class="flex flex-wrap items-center gap-2">
+                 <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold">Questão ${q.numero}</span>
+                 ${q.codigo ? `<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono text-xs font-semibold">${escapeHtml(q.codigo)}</span>` : ''}
+                 ${q.origemMeta ? `<span class="text-xs font-medium text-slate-500">${escapeHtml(q.origemMeta)}</span>` : ''}
+               </div>
+               <div class="flex flex-wrap items-center gap-1.5">
+                 ${ehSimulado && nomeDiscQ ? `<span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-semibold">${escapeHtml(nomeDiscQ)}</span>` : ''}
+                 ${nomeTopico ? `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium max-w-xs truncate" title="${escapeHtml(nomeTopico)}">${escapeHtml(nomeTopico)}</span>` : ''}
+               </div>
+             </div>
 
-                ${q.imagem ? `
-                  <div class="pt-1">
-                    <img src="${q.imagem}" onclick="abrirZoomImagem('${q.imagem}')" alt="Apoio da questão"
-                         class="max-h-80 rounded-xl border border-slate-200 shadow-xs cursor-zoom-in" />
-                    <div class="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
-                      <span>Clique na imagem para ampliar</span>
-                      <button onclick="removerImagemResolucao(${idxOriginal})" class="text-rose-500 hover:underline">Remover print</button>
-                    </div>
-                  </div>
-                ` : ''}
+             <div class="text-slate-800 whitespace-pre-line ${classeFonte}">
+               ${escapeHtml(q.enunciado)}
+             </div>
 
-                ${q.observacao ? `
-                  <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-slate-700 whitespace-pre-line">
-                    <strong class="text-amber-900 block mb-0.5">Dados / Observação:</strong>
-                    ${escapeHtml(q.observacao)}
-                  </div>
-                ` : ''}
+             ${q.imagem ? `
+               <div class="pt-1">
+                 <img src="${q.imagem}" onclick="abrirZoomImagem('${q.imagem}')" alt="Apoio da questão"
+                      class="max-h-80 rounded-xl border border-slate-200 shadow-xs cursor-zoom-in" />
+                 <div class="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
+                   <span>Clique na imagem para ampliar</span>
+                   <button onclick="removerImagemResolucao(${idxOriginal})" class="text-rose-500 hover:underline">Remover print</button>
+                 </div>
+               </div>
+             ` : ''}
 
-                ${q.alternativas.length ? `
-                  <div class="space-y-2 pt-1">
-                    ${q.alternativas.map(alt => {
-                      const riscada = (q.riscadas || []).includes(alt.letra);
-                      return `
-                        <div onclick="toggleRiscarAlternativa(${idxOriginal}, '${alt.letra}')"
-                             title="Clique para riscar/desmarcar alternativa eliminada no papel"
-                             class="flex items-start gap-3 p-2.5 rounded-xl border border-transparent hover:bg-slate-50 hover:border-slate-200 cursor-pointer select-none transition ${riscada ? 'opacity-40 line-through' : ''}">
-                          <span class="w-6 h-6 rounded-full border border-slate-300 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${riscada ? 'bg-slate-200 text-slate-500' : 'bg-white text-slate-700'}">
-                            ${escapeHtml(alt.letra)}
-                          </span>
-                          <span class="text-slate-800 ${classeFonte}">${escapeHtml(alt.texto)}</span>
-                        </div>
-                      `;
-                    }).join('')}
-                  </div>
-                ` : ''}
-              </div>
+             ${q.observacao ? `
+               <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-slate-700 whitespace-pre-line">
+                 <strong class="text-amber-900 block mb-0.5">Dados / Observação:</strong>
+                 ${escapeHtml(q.observacao)}
+               </div>
+             ` : ''}
 
-              <!-- PAINEL LATERAL DE AÇÃO RÁPIDA -->
-              <div class="lg:col-span-4 bg-slate-50/80 border-t lg:border-t-0 lg:border-l border-slate-200 p-5 flex flex-col justify-between space-y-4">
-                <div class="space-y-4">
-                  <div class="flex items-center justify-between gap-2">
-                    ${linkQC ? `
-                      <a href="${escapeHtml(linkQC)}" target="_blank" rel="noopener noreferrer"
-                         class="flex-1 py-2 px-3 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-2xs">
-                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-indigo-600"></i>
-                        Abrir no QConcursos ${q.codigo ? `(${escapeHtml(q.codigo)})` : ''}
-                      </a>
-                    ` : `
-                      <button onclick="editarUrlQuestaoResolucao(${idxOriginal})"
-                              class="flex-1 py-2 px-3 bg-white hover:bg-slate-100 text-slate-500 border border-dashed border-slate-300 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5">
-                        <i data-lucide="link" class="w-3.5 h-3.5"></i> Adicionar link da questão
-                      </button>
-                    `}
-                    <button onclick="editarUrlQuestaoResolucao(${idxOriginal})" class="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-500" title="Editar código ou URL da questão">
-                      <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                    </button>
-                  </div>
+             ${q.alternativas.length ? `
+               <div class="space-y-2 pt-1">
+                 ${q.alternativas.map(alt => {
+                   const riscada = (q.riscadas || []).includes(alt.letra);
+                   return `
+                     <div onclick="toggleRiscarAlternativa(${idxOriginal}, '${alt.letra}')"
+                          title="Clique para riscar/desmarcar alternativa eliminada no papel"
+                          class="flex items-start gap-3 p-2.5 rounded-xl border border-transparent hover:bg-slate-50 hover:border-slate-200 cursor-pointer select-none transition ${riscada ? 'opacity-40 line-through' : ''}">
+                       <span class="w-6 h-6 rounded-full border border-slate-300 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${riscada ? 'bg-slate-200 text-slate-500' : 'bg-white text-slate-700'}">
+                         ${escapeHtml(alt.letra)}
+                       </span>
+                       <span class="text-slate-800 ${classeFonte}">${escapeHtml(alt.texto)}</span>
+                     </div>
+                   `;
+                 }).join('')}
+               </div>
+             ` : ''}
+           </div>
 
-                  <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Resultado após conferir gabarito</label>
-                    <div class="grid grid-cols-1 gap-2">
-                      <button onclick="marcarStatusQuestao(${idxOriginal}, 'acertei')"
-                              class="py-2.5 px-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition ${q.status === 'acertei' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50'}">
-                        <span class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Acertei</span>
-                        ${q.status === 'acertei' ? '<span class="text-[10px] uppercase tracking-wider">Marcado</span>' : ''}
-                      </button>
+           <!-- PAINEL LATERAL DE AÇÃO RÁPIDA -->
+           <div class="lg:col-span-4 bg-slate-50/80 border-t lg:border-t-0 lg:border-l border-slate-200 p-5 flex flex-col justify-between space-y-4">
+             <div class="space-y-4">
+               <div class="flex items-center justify-between gap-2">
+                 ${linkQC ? `
+                   <a href="${escapeHtml(linkQC)}" target="_blank" rel="noopener noreferrer"
+                      class="flex-1 py-2 px-3 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-2xs">
+                     <i data-lucide="external-link" class="w-3.5 h-3.5 text-indigo-600"></i>
+                     Abrir no QConcursos ${q.codigo ? `(${escapeHtml(q.codigo)})` : ''}
+                   </a>
+                 ` : `
+                   <button onclick="editarUrlQuestaoResolucao(${idxOriginal})"
+                           class="flex-1 py-2 px-3 bg-white hover:bg-slate-100 text-slate-500 border border-dashed border-slate-300 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5">
+                     <i data-lucide="link" class="w-3.5 h-3.5"></i> Adicionar link da questão
+                   </button>
+                 `}
+                 <button onclick="editarUrlQuestaoResolucao(${idxOriginal})" class="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-500" title="Editar código ou URL da questão">
+                   <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                 </button>
+               </div>
 
-                      <button onclick="marcarStatusQuestao(${idxOriginal}, 'duvida')"
-                              class="py-2.5 px-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition ${q.status === 'duvida' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-amber-400 hover:bg-amber-50/50'}">
-                        <span class="flex items-center gap-2"><i data-lucide="help-circle" class="w-4 h-4"></i> Acertei na dúvida / chute</span>
-                        ${q.status === 'duvida' ? '<span class="text-[10px] uppercase tracking-wider">Marcado</span>' : ''}
-                      </button>
+               <div>
+                 <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Resultado após conferir gabarito</label>
+                 <div class="grid grid-cols-1 gap-2">
+                   <button onclick="marcarStatusQuestao(${idxOriginal}, 'acertei')"
+                           class="py-2.5 px-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition ${q.status === 'acertei' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50'}">
+                     <span class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Acertei</span>
+                     ${q.status === 'acertei' ? '<span class="text-[10px] uppercase tracking-wider">Marcado</span>' : ''}
+                   </button>
 
-                      <button onclick="marcarStatusQuestao(${idxOriginal}, 'errei')"
-                              class="py-2.5 px-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition ${q.status === 'errei' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-rose-400 hover:bg-rose-50/50'}">
-                        <span class="flex items-center gap-2"><i data-lucide="x-circle" class="w-4 h-4"></i> Errei</span>
-                        ${q.status === 'errei' ? '<span class="text-[10px] uppercase tracking-wider">Marcado</span>' : ''}
-                      </button>
-                    </div>
-                  </div>
+                   <button onclick="marcarStatusQuestao(${idxOriginal}, 'duvida')"
+                           class="py-2.5 px-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition ${q.status === 'duvida' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-amber-400 hover:bg-amber-50/50'}">
+                     <span class="flex items-center gap-2"><i data-lucide="help-circle" class="w-4 h-4"></i> Acertei na dúvida / chute</span>
+                     ${q.status === 'duvida' ? '<span class="text-[10px] uppercase tracking-wider">Marcado</span>' : ''}
+                   </button>
 
-                  <div>
-                    <div class="flex items-center justify-between mb-1">
-                      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtópico da Questão</label>
-                      <button onclick="criarSubtopicoRapidoResolucao(${idxOriginal})" class="text-[11px] text-indigo-600 hover:underline font-semibold">+ Novo</button>
-                    </div>
-                    <select onchange="alterarSubtopicoResolucao(${idxOriginal}, this.value)"
-                            class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white text-slate-700 focus:border-indigo-500 outline-none">
-                      <option value="">-- Geral (${escapeHtml(getNomeDisciplina(rodada.disciplineId))}) --</option>
-                      ${topics.map(t => `<option value="${escapeHtml(t.id)}" ${q.topicId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
-                    </select>
-                  </div>
-                </div>
+                   <button onclick="marcarStatusQuestao(${idxOriginal}, 'errei')"
+                           class="py-2.5 px-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition ${q.status === 'errei' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-rose-400 hover:bg-rose-50/50'}">
+                     <span class="flex items-center gap-2"><i data-lucide="x-circle" class="w-4 h-4"></i> Errei</span>
+                     ${q.status === 'errei' ? '<span class="text-[10px] uppercase tracking-wider">Marcado</span>' : ''}
+                   </button>
+                 </div>
+               </div>
 
-                ${!q.imagem ? `
-                  <div tabindex="0" onpaste="handlePasteEvento(event, 'resolucao', ${idxOriginal})"
-                       class="paste-zone border border-dashed border-slate-300 rounded-xl p-2.5 text-center cursor-pointer bg-white/70 hover:bg-white transition">
-                    <p class="text-[11px] text-slate-500">Faltou tabela/gráfico? Clique e dê <kbd class="px-1 py-0.5 bg-slate-100 border border-slate-300 rounded text-[10px]">Ctrl+V</kbd></p>
-                  </div>
-                ` : ''}
-              </div>
+               ${ehSimulado ? `
+                 <div>
+                   <label class="block text-[11px] font-bold uppercase tracking-wider text-indigo-700 mb-1">Matéria da Questão</label>
+                   <select onchange="alterarMateriaResolucao(${idxOriginal}, this.value)"
+                           class="w-full px-3 py-2 text-xs font-semibold border border-indigo-200 rounded-xl bg-white text-slate-800 focus:border-indigo-500 outline-none">
+                     <option value="">-- Selecione a matéria --</option>
+                     ${estado.disciplines.map(d => `<option value="${escapeHtml(d.id)}" ${qDiscId === d.id ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('')}
+                   </select>
+                 </div>
+               ` : ''}
 
-            </div>
-          </article>
-        `;
-      }).join('');
+               <div>
+                 <div class="flex items-center justify-between mb-1">
+                   <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtópico da Questão</label>
+                   <button onclick="criarSubtopicoRapidoResolucao(${idxOriginal})" class="text-[11px] text-indigo-600 hover:underline font-semibold">+ Novo</button>
+                 </div>
+                 <select onchange="alterarSubtopicoResolucao(${idxOriginal}, this.value)"
+                         class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white text-slate-700 focus:border-indigo-500 outline-none">
+                   <option value="">${ehSimulado && !qDiscId ? '-- Escolha a matéria primeiro --' : `-- Geral (${escapeHtml(getNomeDisciplina(qDiscId))}) --`}</option>
+                   ${topics.map(t => `<option value="${escapeHtml(t.id)}" ${q.topicId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
+                 </select>
+               </div>
+             </div>
 
-      lucide.createIcons();
-    }
+             ${!q.imagem ? `
+               <div tabindex="0" onpaste="handlePasteEvento(event, 'resolucao', ${idxOriginal})"
+                    class="paste-zone border border-dashed border-slate-300 rounded-xl p-2.5 text-center cursor-pointer bg-white/70 hover:bg-white transition">
+                 <p class="text-[11px] text-slate-500">Faltou tabela/gráfico? Clique e dê <kbd class="px-1 py-0.5 bg-slate-100 border border-slate-300 rounded text-[10px]">Ctrl+V</kbd></p>
+               </div>
+             ` : ''}
+           </div>
 
-    function marcarStatusQuestao(idx, novoStatus) {
-      const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
-      if (!rodada || !rodada.questoes[idx]) return;
-      rodada.questoes[idx].status = rodada.questoes[idx].status === novoStatus ? '' : novoStatus;
-      salvarEstado();
-      atualizarCabecalhoResolucao();
-      renderQuestoesResolucao();
-    }
+         </div>
+       </article>
+     `;
+   }).join('');
 
-    function toggleRiscarAlternativa(qIdx, letra) {
-      const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
-      if (!rodada || !rodada.questoes[qIdx]) return;
-      const q = rodada.questoes[qIdx];
-      q.riscadas = q.riscadas || [];
-      if (q.riscadas.includes(letra)) {
-        q.riscadas = q.riscadas.filter(l => l !== letra);
-      } else {
-        q.riscadas.push(letra);
-      }
-      salvarEstado();
-      renderQuestoesResolucao();
-    }
+   lucide.createIcons();
+ }
 
-    function alterarSubtopicoResolucao(qIdx, topicId) {
-      const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
-      if (!rodada || !rodada.questoes[qIdx]) return;
-      rodada.questoes[qIdx].topicId = topicId;
-      salvarEstado();
-      renderQuestoesResolucao();
-    }
+ function marcarStatusQuestao(idx, novoStatus) {
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada || !rodada.questoes[idx]) return;
+   rodada.questoes[idx].status = rodada.questoes[idx].status === novoStatus ? '' : novoStatus;
+   salvarEstado();
+   atualizarCabecalhoResolucao();
+   renderQuestoesResolucao();
+ }
 
-    function criarSubtopicoRapidoResolucao(qIdx) {
-      const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
-      if (!rodada) return;
-      const disc = getDisciplina(rodada.disciplineId);
-      if (!disc) return;
+ function toggleRiscarAlternativa(qIdx, letra) {
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada || !rodada.questoes[qIdx]) return;
+   const q = rodada.questoes[qIdx];
+   q.riscadas = q.riscadas || [];
+   if (q.riscadas.includes(letra)) {
+     q.riscadas = q.riscadas.filter(l => l !== letra);
+   } else {
+     q.riscadas.push(letra);
+   }
+   salvarEstado();
+   renderQuestoesResolucao();
+ }
 
-      const novo = prompt(`Novo subtópico para ${disc.name}:`);
-      if (!novo || !novo.trim()) return;
-      const nomeLimpo = novo.trim();
-      const novoTopico = {
-        id: gerarId('top'),
-        name: nomeLimpo,
-        aula: false,
-        revisao: false,
-        questoes: 0,
-        acertos: 0,
-        lastStudy: new Date().toISOString().slice(0, 10),
-        tagColor: 'none',
-        notesHtml: ''
-      };
-      disc.topics.push(novoTopico);
-      rodada.questoes[qIdx].topicId = novoTopico.id;
-      salvarEstado();
-      renderQuestoesResolucao();
-      mostrarToast(`Subtópico "${nomeLimpo}" adicionado!`);
-    }
+ function alterarMateriaResolucao(qIdx, discId) {
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada || !rodada.questoes[qIdx]) return;
+   rodada.questoes[qIdx].disciplineId = discId;
+   rodada.questoes[qIdx].topicId = '';
+   salvarEstado();
+   renderQuestoesResolucao();
+ }
+
+ function alterarSubtopicoResolucao(qIdx, topicId) {
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada || !rodada.questoes[qIdx]) return;
+   rodada.questoes[qIdx].topicId = topicId;
+   salvarEstado();
+   renderQuestoesResolucao();
+ }
+
+ function criarSubtopicoRapidoResolucao(qIdx) {
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada) return;
+   const ehSimulado = rodada.disciplineId === 'simulado-misto';
+   const qDiscId = ehSimulado ? rodada.questoes[qIdx]?.disciplineId : rodada.disciplineId;
+   const disc = getDisciplina(qDiscId);
+   if (!disc) {
+     mostrarToast('Selecione primeiro a matéria desta questão.', 'aviso');
+     return;
+   }
+
+   const novo = prompt(`Novo subtópico para ${disc.name}:`);
+   if (!novo || !novo.trim()) return;
+   const nomeLimpo = novo.trim();
+   const novoTopico = {
+     id: gerarId('top'),
+     name: nomeLimpo,
+     aula: false,
+     revisao: false,
+     questoes: 0,
+     acertos: 0,
+     lastStudy: new Date().toISOString().slice(0, 10),
+     tagColor: 'none',
+     notesHtml: ''
+   };
+   disc.topics.push(novoTopico);
+   rodada.questoes[qIdx].topicId = novoTopico.id;
+   salvarEstado();
+   renderQuestoesResolucao();
+   mostrarToast(`Subtópico "${nomeLimpo}" adicionado!`);
+ }
 
     function removerImagemResolucao(qIdx) {
       const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
@@ -2194,112 +2266,147 @@ E) R$ 11.576,25`;
     }
 
     function confirmarFinalizacaoRodada() {
-      const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
-      if (!rodada) return;
+   const rodada = estado.rodadasGuiadas.find(r => r.id === rodadaAtivaId);
+   if (!rodada) return;
 
-      const incluirDuvidas = document.getElementById('fin-incluir-duvidas').checked;
-      const total = rodada.questoes.length;
-      const acertos = rodada.questoes.filter(q => q.status === 'acertei').length;
-      const duvidas = rodada.questoes.filter(q => q.status === 'duvida').length;
-      const erros = rodada.questoes.filter(q => q.status === 'errei').length;
-      const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
-      const hojeIso = new Date().toISOString().slice(0, 10);
+   const ehSimulado = rodada.disciplineId === 'simulado-misto';
+   const incluirDuvidas = document.getElementById('fin-incluir-duvidas').checked;
+   const total = rodada.questoes.length;
+   const acertos = rodada.questoes.filter(q => q.status === 'acertei').length;
+   const duvidas = rodada.questoes.filter(q => q.status === 'duvida').length;
+   const erros = rodada.questoes.filter(q => q.status === 'errei').length;
+   const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
+   const hojeIso = new Date().toISOString().slice(0, 10);
 
-      const etiquetaOrigem = rodada.titulo.split('–')[0].trim() || rodada.titulo;
-      const disc = getDisciplina(rodada.disciplineId);
+   const etiquetaOrigem = rodada.titulo.split('–')[0].trim() || rodada.titulo;
 
-      // Atualiza estatísticas dos tópicos estudados
-      if (disc && rodada.status !== 'concluida') {
-        rodada.questoes.forEach(q => {
-          if (!q.topicId) return;
-          const top = disc.topics.find(t => t.id === q.topicId);
-          if (top) {
-            top.questoes = (top.questoes || 0) + 1;
-            if (q.status === 'acertei' || q.status === 'duvida') {
-              top.acertos = (top.acertos || 0) + 1;
-            }
-            top.lastStudy = hojeIso;
-          }
-        });
-      }
+   // Atualiza estatísticas dos tópicos estudados (suporta matéria única ou simulado misto)
+   if (rodada.status !== 'concluida') {
+     rodada.questoes.forEach(q => {
+       const qDiscId = ehSimulado ? (q.disciplineId || '') : rodada.disciplineId;
+       const disc = getDisciplina(qDiscId);
+       if (!disc || !q.topicId) return;
 
-      // Envia erros (e dúvidas, se marcado) para estado.errors no formato unificado
-      let enviados = 0;
-      rodada.questoes.forEach(q => {
-        const deveEnviar = q.status === 'errei' || (incluirDuvidas && q.status === 'duvida');
-        if (!deveEnviar) return;
+       const top = disc.topics.find(t => t.id === q.topicId);
+       if (top) {
+         top.questoes = (top.questoes || 0) + 1;
+         if (q.status === 'acertei' || q.status === 'duvida') {
+           top.acertos = (top.acertos || 0) + 1;
+         }
+         top.lastStudy = hojeIso;
+       }
+     });
+   }
 
-        const jaExiste = estado.errors.some(e => e.rodadaId === rodada.id && e.questaoId === q.id);
-        if (jaExiste) return;
+   // Envia erros (e dúvidas, se marcado) para estado.errors com a matéria/assunto de cada questão
+   let enviados = 0;
+   rodada.questoes.forEach(q => {
+     const deveEnviar = q.status === 'errei' || (incluirDuvidas && q.status === 'duvida');
+     if (!deveEnviar) return;
 
-        const textoAlternativas = q.alternativas.length
-          ? '\n\n' + q.alternativas.map(a => `${a.letra}) ${a.texto}`).join('\n')
-          : '';
+     const jaExiste = estado.errors.some(e => e.rodadaId === rodada.id && e.questaoId === q.id);
+     if (jaExiste) return;
 
-        estado.errors.unshift({
-          id: gerarId('err'),
-          rodadaId: rodada.id,
-          questaoId: q.id,
-          disciplineId: rodada.disciplineId,
-          topicId: q.topicId || '',
-          topicName: getNomeTopico(rodada.disciplineId, q.topicId),
-          codigo: q.codigo || '',
-          link: gerarLinkQConcursos(q.codigo, q.urlPersonalizada),
-          statement: (q.enunciado + textoAlternativas).trim(),
-          answer: '',
-          imagem: q.imagem || '',
-          observacao: q.observacao || '',
-          origem: etiquetaOrigem,
-          tipoRegistro: q.status === 'duvida' ? 'duvida' : 'erro',
-          reasonId: 'desconhecimento',
-          relevance: 'Alta',
-          status: 'Pendente',
-          notes: '',
-          revisoes: 0,
-          date: hojeIso
-        });
-        enviados++;
-      });
+     const qDiscId = ehSimulado ? (q.disciplineId || '') : rodada.disciplineId;
+     const textoAlternativas = q.alternativas.length
+       ? '\n\n' + q.alternativas.map(a => `${a.letra}) ${a.texto}`).join('\n')
+       : '';
 
-      rodada.status = 'concluida';
-      rodada.dataFinalizacao = new Date().toISOString();
-      rodada.percentualAcerto = pct;
+     estado.errors.unshift({
+       id: gerarId('err'),
+       rodadaId: rodada.id,
+       questaoId: q.id,
+       disciplineId: qDiscId,
+       topicId: q.topicId || '',
+       topicName: getNomeTopico(qDiscId, q.topicId),
+       codigo: q.codigo || '',
+       link: gerarLinkQConcursos(q.codigo, q.urlPersonalizada),
+       statement: (q.enunciado + textoAlternativas).trim(),
+       answer: '',
+       imagem: q.imagem || '',
+       observacao: q.observacao || '',
+       origem: etiquetaOrigem,
+       tipoRegistro: q.status === 'duvida' ? 'duvida' : 'erro',
+       reasonId: 'desconhecimento',
+       relevance: 'Alta',
+       status: 'Pendente',
+       notes: '',
+       revisoes: 0,
+       date: hojeIso
+     });
+     enviados++;
+   });
 
-      // Registra em estado.sessions (compatível com o gráfico e histórico original)
-      const duracaoMin = Math.max(1, Math.round((rodada.tempoSegundos || 0) / 60));
-      const idxSess = estado.sessions.findIndex(s => s.roundId === rodada.id);
-      const novaSessao = {
-        id: idxSess >= 0 ? estado.sessions[idxSess].id : gerarId('sess'),
-        roundId: rodada.id,
-        roundName: rodada.titulo,
-        date: hojeIso,
-        disciplineId: rodada.disciplineId,
-        topicId: null,
-        durationMinutes: duracaoMin,
-        questionsCount: total,
-        correctCount: acertos,
-        duvidasCount: duvidas,
-        errosCount: erros
-      };
-      if (idxSess >= 0) estado.sessions[idxSess] = novaSessao;
-      else estado.sessions.unshift(novaSessao);
+   rodada.status = 'concluida';
+   rodada.dataFinalizacao = new Date().toISOString();
+   rodada.percentualAcerto = pct;
 
-      pararCronometro();
-      salvarEstado();
-      fecharModal('modal-finalizar-rodada');
-      rodadaAtivaId = null;
+   // Registra em estado.sessions (no Simulado, agrupa por matéria para alimentar o Painel e Evolução)
+   const duracaoMin = Math.max(1, Math.round((rodada.tempoSegundos || 0) / 60));
+   estado.sessions = estado.sessions.filter(s => s.roundId !== rodada.id);
 
-      if (enviados > 0) {
-        mostrarToast(`Rodada finalizada (${pct}%)! ${enviados} questão(ões) enviada(s) ao Caderno de Erros.`);
-        navegar('erros');
-        document.getElementById('filtro-erro-status').value = 'sem-bizu';
-        renderCadernoErros();
-      } else {
-        mostrarToast(`Rodada finalizada com ${pct}% de acertos!`);
-        voltarListaRodadasGuiadas();
-      }
-    }
+   if (ehSimulado) {
+     const gruposPorDisc = {};
+     rodada.questoes.forEach(q => {
+       const dId = q.disciplineId || 'geral';
+       if (!gruposPorDisc[dId]) {
+         gruposPorDisc[dId] = { total: 0, acertos: 0, duvidas: 0, erros: 0 };
+       }
+       gruposPorDisc[dId].total++;
+       if (q.status === 'acertei') gruposPorDisc[dId].acertos++;
+       else if (q.status === 'duvida') gruposPorDisc[dId].duvidas++;
+       else if (q.status === 'errei') gruposPorDisc[dId].erros++;
+     });
 
+     const entradas = Object.entries(gruposPorDisc);
+     const minPorGrupo = Math.max(1, Math.round(duracaoMin / Math.max(1, entradas.length)));
+     entradas.reverse().forEach(([dId, stats]) => {
+       estado.sessions.unshift({
+         id: gerarId('sess'),
+         roundId: rodada.id,
+         roundName: rodada.titulo,
+         date: hojeIso,
+         disciplineId: dId,
+         topicId: null,
+         durationMinutes: minPorGrupo,
+         questionsCount: stats.total,
+         correctCount: stats.acertos,
+         duvidasCount: stats.duvidas,
+         errosCount: stats.erros
+       });
+     });
+   } else {
+     estado.sessions.unshift({
+       id: gerarId('sess'),
+       roundId: rodada.id,
+       roundName: rodada.titulo,
+       date: hojeIso,
+       disciplineId: rodada.disciplineId,
+       topicId: null,
+       durationMinutes: duracaoMin,
+       questionsCount: total,
+       correctCount: acertos,
+       duvidasCount: duvidas,
+       errosCount: erros
+     });
+   }
+
+   pararCronometro();
+   salvarEstado();
+   fecharModal('modal-finalizar-rodada');
+   rodadaAtivaId = null;
+
+   if (enviados > 0) {
+     mostrarToast(`Rodada finalizada (${pct}%)! ${enviados} questão(ões) enviada(s) ao Caderno de Erros.`);
+     navegar('erros');
+     document.getElementById('filtro-erro-status').value = 'sem-bizu';
+     renderCadernoErros();
+   } else {
+     mostrarToast(`Rodada finalizada com ${pct}% de acertos!`);
+     voltarListaRodadasGuiadas();
+   }
+ }
+ 
     // =========================================================================
     // CADERNO DE ERROS
     // =========================================================================
